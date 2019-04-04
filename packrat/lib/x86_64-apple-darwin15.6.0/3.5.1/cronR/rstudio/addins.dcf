@@ -1,0 +1,4 @@
+Name: Schedule R scripts on Linux/Unix
+Description: Use cron to schedule your R scripts (Linux/Unix)
+Binding: cron_rstudioaddin
+Interactive: true

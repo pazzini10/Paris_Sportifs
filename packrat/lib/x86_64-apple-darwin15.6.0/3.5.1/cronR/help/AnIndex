@@ -1,0 +1,10 @@
+cronjob	cron_add
+cron_add	cron_add
+cron_clear	cron_clear
+cron_load	cron_load
+cron_ls	cron_ls
+cron_njobs	cron_njobs
+cron_rm	cron_rm
+cron_rscript	cron_rscript
+cron_rstudioaddin	cron_rstudioaddin
+cron_save	cron_save

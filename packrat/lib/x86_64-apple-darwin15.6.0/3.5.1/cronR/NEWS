@@ -1,0 +1,23 @@
+Package: cronR
+================
+
+Version: 0.4.0 [2018-03-07]
+- Allow creating any cron schedule + update rstudio addin + added examples on that
+- No longer use the extdata folder if the user does not have right permissions
+
+Version: 0.3.0 [2017-03-03]
+- Add cron_rscript
+- Add examples
+- Make sure Rscript uses full path and shQuote scripts
+- Roxygen updates
+- Vignette
+
+
+Version: 0.2.1 [2016-07-06]
+- Use shinyfiles package to allow to use files on a server instead of uploading them
+
+
+Version: 0.2.0 [2016-06-14]
+- Added RStudio add-in
+- Fixed issues with days_of_week, days_of_month and months parsing if several were given
+- R CMD check happiness

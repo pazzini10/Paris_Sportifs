@@ -1,0 +1,11 @@
+cron_add                Make a simple cron job
+cron_clear              Clear all cron jobs
+cron_load               Load a crontab from file
+cron_ls                 List the contents of a crontab
+cron_njobs              List the number of rCron cron jobs
+cron_rm                 Remove a cronjob
+cron_rscript            Create a command to execute an R script which
+                        can be scheduled with cron_add
+cron_rstudioaddin       Launch an RStudio addin which allows to
+                        schedule an Rscript interactively.
+cron_save               Save the current crontab

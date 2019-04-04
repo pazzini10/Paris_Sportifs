@@ -1,0 +1,8 @@
+chooseData-module       Module for choosing data.frame
+coerce-module           Coerce data.frame's columns module
+dragulaInput            Drag And Drop Input Widget
+esquisser               An add-in to easily create plots with ggplot2
+esquisserServer         Esquisse Shiny module
+filterData-module       Modules for creating filters from a data.frame
+ggplot_to_ppt           Utility to export ggplot objects to PowerPoint
+updateDragulaInput      Update Dragula Input

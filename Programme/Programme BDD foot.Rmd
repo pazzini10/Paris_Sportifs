@@ -1,0 +1,349 @@
+---
+title: "BDD foot"
+author: "David Flouriot"
+date: "05/04/2019"
+output: html_document
+---
+
+#Définition de proxy si besoin
+```{r}
+Sys.setenv(http_proxy="zscaler-paris.pj.fr:80")
+Sys.setenv(https_proxy="zscaler-paris.pj.fr:80") 
+
+Sys.setenv(http_proxy="")
+Sys.setenv(https_proxy="") 
+```
+
+
+
+#Lancement Packrat
+```{r}
+ 
+library(packrat)
+library(knitr) 
+knitr::opts_knit$set(root.dir = '/Users/dflouriot/R/Paris_Sportifs/')
+ 
+
+#packrat::set_opts(symlink.system.packages = TRUE)
+packrat::init('/Users/dflouriot/R/Paris_Sportifs/')
+packrat::on(project =  '/Users/dflouriot/R/Paris_Sportifs/',auto.snapshot = T )
+ 
+#install.packages("Rcrawler", dependencies = TRUE)
+#remove.packages("xtable")
+
+#Mettre à jour les packages ajoutés ou supprimés
+packrat::snapshot()
+#Vérifier si tous les packages ont été chargés
+packrat::status()
+#Nettoyer les packages inutiles
+packrat::clean()
+#Pour transporter un projet
+packrat::bundle()
+
+#Automatique packrat à jour
+packrat::set_opts(auto.snapshot = TRUE)
+
+```
+
+
+
+#Définition des librairies
+```{r}
+library(Rcrawler)
+library(xml2)
+library(httr)
+library(XML)
+library(data.table)
+library(iterators)
+library(foreach)
+library(doParallel)
+library(curl)
+library(rvest)
+library(stringr)
+library(RCurl)
+library(dplyr)
+library(esquisse)
+library(cronR)
+
+
+  
+
+```
+
+#test pour crawler les côtes en ligne
+```{r}
+
+cote=read_html(paste0('http://www.cotes.fr/football/France-Ligue-1-ed3'))
+coteligue = cote %>%
+  html_table(fill = TRUE)%>%
+  .[2] %>%
+  as.data.frame()
+
+parieur= cote %>%
+  html_table(fill = TRUE)%>%
+  .[1] %>%
+  as.data.frame()
+
+
+
+#Loading both the required libraries
+library(rvest)
+library(V8)
+#URL with js-rendered content to be scraped
+link <- read_html('https://food.list.co.uk/place/22191-brewhemia-edinburgh/')
+#Read the html page content and extract all javascript codes that are inside a list
+link %>% 
+ html_nodes('li') %>% 
+ html_nodes('script') %>% 
+ html_text()
+ 
+```
+#Test pour crawler le site soccerstats
+
+```{r}
+ 
+
+
+
+today <- as.Date(format(Sys.Date(), format="%Y/%m/%d"))
+final_match_a_venir=NULL
+final_match_passe=NULL
+dday=5
+for (dday in 0:5) {
+ 
+  ejour=-dday+1
+jour= today - as.difftime(ejour, unit="days") 
+ 
+
+match_soccerstat=   GET(paste0("https://www.soccerstats.com/matches.asp?matchday=",dday), 
+set_cookies('sc_is_visitor_unique' = ' rx2749989.1554131493.F29D33C110DA4F4329286B70842951B8.6.5.4.4.4.4.4.4.4',
+              'cookiesok'='yes',
+              'cdisp'='yes',
+              'tz'='60',
+              '_sm_au_c'='iVV7hJh4jH0r44s210')) %>%
+read_html
+                      
+ 
+match_soccerstat=match_soccerstat %>%
+html_nodes('.trow8')  %>%
+html_text()
+         
+e=matrix(nrow = length(match_soccerstat),ncol=41)
+for (i in 1:41) {
+e[,i]= sapply(strsplit(match_soccerstat, "\n"), function(x) x[i])
+         }
+
+match_s=as.data.frame(e)
+match_s=match_s[,-c(6,8,9,11,12,16,18,19,20,23,24,26,29,30,32,33,35)]
+ 
+match_s=as.data.frame(apply(match_s, 2, function(y) gsub("\r", "", y)))
+match_s$date_scrap=today
+match_s$jour=dday
+
+match_a_venir=match_s %>%
+  filter(V22=='')
+
+match_passe=match_s %>%
+  filter(V22!='')
+ 
+final_match_a_venir=rbind(match_a_venir,final_match_a_venir)
+final_match_passe=rbind(match_passe,final_match_passe)
+} 
+
+#Extraction de toutes les URL des rencontres 
+stat_match=match_soccerstat %>%
+html_nodes('.trow8')  %>%
+html_nodes('a') %>%
+html_attr('href')
+
+stat_match <- as.data.frame(stat_match[which(regexpr('pmatch.asp', stat_match) >= 1)])
+
+idx2 <- sapply(paste0(gsub(" ","-",tolower(match_s$V17)),'-vs-',gsub(" ","-",tolower(match_s$V25))), grep,stat_match[,1])
+#stat_match <- stat_match[which(regexpr('pmatch.asp?league=', stat_match) >= 1)]
+idx1 <- sapply(seq_along(idx2), function(i) rep(i, length(idx2[[i]])))
+
+stat_match_final=cbind(match_s[unlist(idx1),,drop=F], stat_match[unlist(idx2),,drop=F])
+ 
+test=stat_match_final[1,27]
+face_a_soccerstat=   GET(paste0("https://www.soccerstats.com/",test), 
+set_cookies('sc_is_visitor_unique' = ' rx2749989.1554131493.F29D33C110DA4F4329286B70842951B8.6.5.4.4.4.4.4.4.4',
+              'cookiesok'='yes',
+              'cdisp'='yes',
+              'tz'='60',
+              '_sm_au_c'='iVV7hJh4jH0r44s210')) %>%
+read_html
+face_a_soccerstat1= face_a_soccerstat %>%
+  html_table(fill = TRUE)
+
+
+```
+
+#Récupération d'une base de données sur plusieurs championnats de foot avec un longue histo
+```{r}
+score=read.csv2(file="/Users/dflouriot/R/Paris_Sportifs/BDD_histo_bet_scores.csv")
+score=score[,c(1:35)]
+#save(score,file="/Users/dflouriot/R/Paris_Sportifs/BDD_histo_bet_scores.RData")
+
+score=score %>%
+  mutate(MM=
+           ifelse(MM=='Jan',01,
+           ifelse(MM=='Feb',02,
+           ifelse(MM=='Mar',03,
+           ifelse(MM=='Apr',04,
+           ifelse(MM=='May',05,
+           ifelse(MM=='Jun',06,
+           ifelse(MM=='Jul',07,
+           ifelse(MM=='Aug',08,
+           ifelse(MM=='Sep',09,
+           ifelse(MM=='Oct',10,
+           ifelse(MM=='Nov',11,
+           ifelse(MM=='Dec',12,00)))))))))))),
+         Date=as.Date(paste0(DD,"-",MM,"-",YY),format='%d-%m-%Y')
+         
+         
+         ) 
+                                                     
+                  
+                  
+ 
+score_france= score %>%
+  filter(Country=='France' & Season=='2018/2019' & League=='Ligue 1')
+```
+
+#Création des indicateurs en fonction d'une journée
+
+```{r}
+#Classement chaque jour en live
+class_home = score_france %>%
+  select(Date,Team_home,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
+  mutate(points=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
+         points_H=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
+         points_A=0,
+         nb_matchs_H=1,
+         nb_matchs_A=0,
+         nb_vict=ifelse(Final_R=='H',1,0),
+         nb_def=ifelse(Final_R=='A',1,0),
+         nb_nul=ifelse(Final_R=='D',1,0),
+         nb_vict_H=ifelse(Final_R=='H',1,0),
+         nb_def_H=ifelse(Final_R=='A',1,0),
+         nb_nul_H=ifelse(Final_R=='D',1,0),
+         buts_marq_A=0,buts_enc_A=0,buts_marq_H=Final_H,buts_enc_H=Final_A,
+         nb_vict_A=0,
+         nb_def_A=0,
+         nb_nul_A=0,
+         mt1_points=ifelse(First_R=='H',3,ifelse(First_R=='A',0,ifelse(First_R=='D',1,0))),
+         mt2_points=ifelse(Second_R=='H',3,ifelse(Second_R=='A',0,ifelse(Second_R=='D',1,0)))
+         ) %>%
+  rename(Team=Team_home,buts_marq=Final_H,buts_enc=Final_A,
+         buts_marq_mt1=First_H,buts_marq_mt2=Second_H,
+         buts_enc_mt1=First_A,buts_enc_mt2=Second_A) %>%
+  select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points)
+
+class_away = score_france %>%
+  select(Date,Team_away,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
+  mutate(points=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
+         points_A=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
+         points_H=0,
+         nb_matchs_H=0,
+         nb_matchs_A=1,
+         nb_vict=ifelse(Final_R=='A',1,0),
+         nb_def=ifelse(Final_R=='H',1,0),
+         nb_nul=ifelse(Final_R=='D',1,0),
+         nb_vict_A=ifelse(Final_R=='A',1,0),
+         nb_def_A=ifelse(Final_R=='H',1,0),
+         nb_nul_A=ifelse(Final_R=='D',1,0),
+         nb_vict_H=0,
+         nb_def_H=0,
+         nb_nul_H=0,
+         buts_marq_H=0,buts_enc_H=0,buts_marq_A=Final_A,buts_enc_A=Final_H,
+         mt1_points=ifelse(First_R=='A',3,ifelse(First_R=='H',0,ifelse(First_R=='D',1,0))),
+         mt2_points=ifelse(Second_R=='A',3,ifelse(Second_R=='H',0,ifelse(Second_R=='D',1,0)))
+         ) %>%
+  rename(Team=Team_away,buts_marq=Final_A,buts_enc=Final_H,
+         buts_marq_mt1=First_A,buts_marq_mt2=Second_A,
+         buts_enc_mt1=First_H,buts_enc_mt2=Second_H)  %>%
+   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points)
+
+class_ens = rbind(class_away,class_home) %>%
+  arrange(Date)
+
+date_vect=unique(class_ens$Date)
+
+classement=NULL
+for (i in date_vect) {
+  i='2019-03-31'
+  class_temp=class_ens %>%
+    filter(Date<=i) %>%
+    #select(Team,points) %>%
+    group_by(Team) %>%
+    summarise(
+      nb_matchs=sum(as.numeric(as.character(nb_matchs_A)),as.numeric(as.character(nb_matchs_H))),
+      nb_matchs_H=sum(as.numeric(as.character(nb_matchs_H))),
+      nb_matchs_A=sum(as.numeric(as.character(nb_matchs_A))),
+      points=sum(as.numeric(as.character(points))),
+        points_H=sum(as.numeric(as.character(points_H))),
+        points_A=sum(as.numeric(as.character(points_A))),
+         nb_vict=sum(as.numeric(as.character(nb_vict))),
+         nb_def=sum(as.numeric(as.character(nb_def))),
+         nb_nul=sum(as.numeric(as.character(nb_nul))),
+         nb_vict_A=sum(as.numeric(as.character(nb_vict_A))),
+         nb_def_A=sum(as.numeric(as.character(nb_def_A))),
+         nb_nul_A=sum(as.numeric(as.character(nb_nul_A))),
+         nb_vict_H=sum(as.numeric(as.character(nb_vict_H))),
+         nb_def_H=sum(as.numeric(as.character(nb_def_H))),
+         nb_nul_H=sum(as.numeric(as.character(nb_nul_H))),
+      buts_marq=sum(as.numeric(as.character(buts_marq))),
+      buts_enc=sum(as.numeric(as.character(buts_enc))),
+      buts_marq_H=sum(as.numeric(as.character(buts_marq_H))),
+      buts_marq_A=sum(as.numeric(as.character(buts_marq_A))),
+      buts_enc_H=sum(as.numeric(as.character(buts_enc_H))),
+      buts_enc_A=sum(as.numeric(as.character(buts_enc_A))),
+      buts_marq_mt1=sum(as.numeric(as.character(buts_marq_mt1))),
+      buts_marq_mt2=sum(as.numeric(as.character(buts_marq_mt2))),
+      buts_enc_mt1=sum(as.numeric(as.character(buts_enc_mt1))),
+      buts_enc_mt2=sum(as.numeric(as.character(buts_enc_mt2))),
+      mt1_points=sum(as.numeric(as.character(mt1_points))),
+      mt2_points=sum(as.numeric(as.character(mt2_points)))
+      
+      ) %>%
+    arrange(desc(points)) %>%
+    mutate(Date=as.Date(i,origin="1970-01-01"),
+           diff_buts=buts_marq-buts_enc,
+           diff_buts_mt1=buts_marq_mt1-buts_enc_mt1,
+           diff_buts_mt2=buts_marq_mt1-buts_enc_mt2,
+           buts_marq_match=buts_marq/nb_matchs,
+           buts_marq_match_H=buts_marq_H/nb_matchs_H,
+           buts_marq_match_A=buts_marq_A/nb_matchs_A,
+           buts_enc_match=buts_enc/nb_matchs,
+           buts_enc_match_H=buts_enc_H/nb_matchs_H,
+           buts_enc_match_A=buts_enc_A/nb_matchs_A,
+           points_marq_match=points/nb_matchs,
+           points_marq_match_H=points_H/nb_matchs_H,
+           points_marq_match_A=points_A/nb_matchs_A
+      
+           
+           ) %>%
+    arrange(desc(points),desc(diff_buts)) %>%
+    ungroup() %>%
+    mutate(classement=row_number())
+  
+  
+  classement=rbind(classement,class_temp) 
+}
+
+  
+#nb buts moyen par matchs...
+SCORING	Home	Away	All
+Goals scored	37	29	66
+Goals scored per match	1.85	1.53	1.69
+Goals conceded	16	21	37
+Goals conceded per match	0.80	1.11	0.95
+Scored+conc. per match	2.65	2.63	2.64
+Matches over 1.5 goals	70%	68%	69%
+Matches over 2.5 goals	50%	53%	51%
+Matches over 3.5 goals	30%	26%	28%
+Matches over 4.5 goals	20%	16%	18%
+Over 2.5 goals at half-time	15%	11%	13%
+    
+```
+
