@@ -203,8 +203,9 @@ score=score %>%
          
          ) 
                                                      
-                  
-                  
+indx=c('First_H','First_A','Second_H','Second_A','Final_H','Final_A')
+ 
+score[indx] <- lapply(score[indx], function(x) as.numeric(as.character(x)))                 
  
 score_france= score %>%
   filter(Country=='France' & Season=='2018/2019' & League=='Ligue 1')
@@ -232,12 +233,27 @@ class_home = score_france %>%
          nb_def_A=0,
          nb_nul_A=0,
          mt1_points=ifelse(First_R=='H',3,ifelse(First_R=='A',0,ifelse(First_R=='D',1,0))),
-         mt2_points=ifelse(Second_R=='H',3,ifelse(Second_R=='A',0,ifelse(Second_R=='D',1,0)))
+         mt2_points=ifelse(Second_R=='H',3,ifelse(Second_R=='A',0,ifelse(Second_R=='D',1,0))),
+         nb_0p5_buts= ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=1,1,0),
+         nb_1p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=2,1,0),
+         nb_2p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=3,1,0),
+         nb_3p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=4,1,0),
+         nb_4p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=5,1,0),
+         nb_0p5_buts_marq= ifelse(as.numeric(as.character(Final_H))>=1,1,0),
+         nb_1p5_buts_marq=ifelse(as.numeric(as.character(Final_H))>=2,1,0),
+         nb_2p5_buts_marq=ifelse(as.numeric(as.character(Final_H))>=3,1,0),
+         nb_3p5_buts_marq=ifelse(as.numeric(as.character(Final_H))>=4,1,0),
+         nb_4p5_buts_marq=ifelse(as.numeric(as.character(Final_H))>=5,1,0),
+         nb_0p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=1,1,0),
+         nb_1p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=2,1,0),
+         nb_2p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=3,1,0),
+         nb_3p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=4,1,0),
+         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=5,1,0)
          ) %>%
   rename(Team=Team_home,buts_marq=Final_H,buts_enc=Final_A,
          buts_marq_mt1=First_H,buts_marq_mt2=Second_H,
          buts_enc_mt1=First_A,buts_enc_mt2=Second_A) %>%
-  select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points)
+   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc)
 
 class_away = score_france %>%
   select(Date,Team_away,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
@@ -257,12 +273,27 @@ class_away = score_france %>%
          nb_nul_H=0,
          buts_marq_H=0,buts_enc_H=0,buts_marq_A=Final_A,buts_enc_A=Final_H,
          mt1_points=ifelse(First_R=='A',3,ifelse(First_R=='H',0,ifelse(First_R=='D',1,0))),
-         mt2_points=ifelse(Second_R=='A',3,ifelse(Second_R=='H',0,ifelse(Second_R=='D',1,0)))
+         mt2_points=ifelse(Second_R=='A',3,ifelse(Second_R=='H',0,ifelse(Second_R=='D',1,0))),
+         nb_0p5_buts= ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=1,1,0),
+         nb_1p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=2,1,0),
+         nb_2p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=3,1,0),
+         nb_3p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=4,1,0),
+         nb_4p5_buts=ifelse(as.numeric(as.character(Final_H))+as.numeric(as.character(Final_A))>=5,1,0),
+        nb_0p5_buts_marq= ifelse(as.numeric(as.character(Final_A))>=1,1,0),
+         nb_1p5_buts_marq=ifelse(as.numeric(as.character(Final_A))>=2,1,0),
+         nb_2p5_buts_marq=ifelse(as.numeric(as.character(Final_A))>=3,1,0),
+         nb_3p5_buts_marq=ifelse(as.numeric(as.character(Final_A))>=4,1,0),
+         nb_4p5_buts_marq=ifelse(as.numeric(as.character(Final_A))>=5,1,0),
+         nb_0p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=1,1,0),
+         nb_1p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=2,1,0),
+         nb_2p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=3,1,0),
+         nb_3p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=4,1,0),
+         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=5,1,0)
          ) %>%
   rename(Team=Team_away,buts_marq=Final_A,buts_enc=Final_H,
          buts_marq_mt1=First_A,buts_marq_mt2=Second_A,
          buts_enc_mt1=First_H,buts_enc_mt2=Second_H)  %>%
-   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points)
+   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc)
 
 class_ens = rbind(class_away,class_home) %>%
   arrange(Date)
@@ -303,7 +334,22 @@ for (i in date_vect) {
       buts_enc_mt1=sum(as.numeric(as.character(buts_enc_mt1))),
       buts_enc_mt2=sum(as.numeric(as.character(buts_enc_mt2))),
       mt1_points=sum(as.numeric(as.character(mt1_points))),
-      mt2_points=sum(as.numeric(as.character(mt2_points)))
+      mt2_points=sum(as.numeric(as.character(mt2_points))),
+      nb_0p5_buts=sum(nb_0p5_buts),
+      nb_1p5_buts=sum(nb_1p5_buts),
+      nb_2p5_buts=sum(nb_2p5_buts),
+      nb_3p5_buts=sum(nb_3p5_buts),
+      nb_4p5_buts=sum(nb_4p5_buts),
+      nb_0p5_buts_marq=sum(nb_0p5_buts_marq),
+      nb_1p5_buts_marq=sum(nb_1p5_buts_marq),
+      nb_2p5_buts_marq=sum(nb_2p5_buts_marq),
+      nb_3p5_buts_marq=sum(nb_3p5_buts_marq),
+      nb_4p5_buts_marq=sum(nb_4p5_buts_marq),
+      nb_0p5_buts_enc=sum(nb_0p5_buts_enc),
+      nb_1p5_buts_enc=sum(nb_1p5_buts_enc),
+      nb_2p5_buts_enc=sum(nb_2p5_buts_enc),
+      nb_3p5_buts_enc=sum(nb_3p5_buts_enc),
+      nb_4p5_buts_enc=sum(nb_4p5_buts_enc)
       
       ) %>%
     arrange(desc(points)) %>%
@@ -319,8 +365,25 @@ for (i in date_vect) {
            buts_enc_match_A=buts_enc_A/nb_matchs_A,
            points_marq_match=points/nb_matchs,
            points_marq_match_H=points_H/nb_matchs_H,
-           points_marq_match_A=points_A/nb_matchs_A
-      
+           points_marq_match_A=points_A/nb_matchs_A,
+           buts_match=buts_marq_match+buts_enc_match_H,
+           buts_match_H=buts_marq_match_H+buts_enc_match_H,
+           buts_match_A=buts_marq_match_A+buts_enc_match_A,
+           part_nb_0p5_buts=nb_0p5_buts/nb_matchs,
+           part_nb_1p5_buts=nb_1p5_buts/nb_matchs,
+           part_nb_2p5_buts=nb_2p5_buts/nb_matchs,
+           part_nb_3p5_buts=nb_3p5_buts/nb_matchs,
+           part_nb_4p5_buts=nb_4p5_buts/nb_matchs,
+           part_nb_0p5_buts_marq=nb_0p5_buts_marq/nb_matchs,
+           part_nb_1p5_buts_marq=nb_1p5_buts_marq/nb_matchs,
+           part_nb_2p5_buts_marq=nb_2p5_buts_marq/nb_matchs,
+           part_nb_3p5_buts_marq=nb_3p5_buts_marq/nb_matchs,
+           part_nb_4p5_buts_marq=nb_4p5_buts_marq/nb_matchs,
+           part_nb_0p5_buts_enc=nb_0p5_buts_enc/nb_matchs,
+           part_nb_1p5_buts_enc=nb_1p5_buts_enc/nb_matchs,
+           part_nb_2p5_buts_enc=nb_2p5_buts_enc/nb_matchs,
+           part_nb_3p5_buts_enc=nb_3p5_buts_enc/nb_matchs,
+           part_nb_4p5_buts_enc=nb_4p5_buts_enc/nb_matchs
            
            ) %>%
     arrange(desc(points),desc(diff_buts)) %>%
@@ -332,18 +395,8 @@ for (i in date_vect) {
 }
 
   
-#nb buts moyen par matchs...
-SCORING	Home	Away	All
-Goals scored	37	29	66
-Goals scored per match	1.85	1.53	1.69
-Goals conceded	16	21	37
-Goals conceded per match	0.80	1.11	0.95
-Scored+conc. per match	2.65	2.63	2.64
-Matches over 1.5 goals	70%	68%	69%
-Matches over 2.5 goals	50%	53%	51%
-Matches over 3.5 goals	30%	26%	28%
-Matches over 4.5 goals	20%	16%	18%
-Over 2.5 goals at half-time	15%	11%	13%
-    
+ 
+ 
+ 
 ```
 
