@@ -1,0 +1,300 @@
+"";"Date";"Team_home";"Team_away";"Final_H";"Final_A";"nb_matchs";"unique_teamgoal";"pdata";"pred"
+"1";2019-04-06;"Angers SCO";"Stade Rennais FC";3;3;31;0;0,248680846577751;0
+"2";2019-03-31;"Amiens SC";"Girondins de Bordeaux";0;0;30;1;0,543523653168959;1
+"3";2019-03-17;"Paris Saint-Germain";"Olympique de Marseille";3;1;28;0;0,223572096135503;0
+"4";2019-03-16;"Angers SCO";"Amiens SC";0;0;29;1;0,452138864467509;0
+"5";2019-03-10;"AS Saint-Etienne";"LOSC";0;1;28;1;0,238198895487972;0
+"6";2019-03-03;"OGC Nice";"RC Strasbourg Alsace";1;0;27;1;0,527666713546151;1
+"7";2019-03-03;"Olympique Lyonnais";"Toulouse FC";5;1;27;0;0,591348138241003;1
+"8";2019-03-02;"SM Caen";"Paris Saint-Germain";1;2;27;0;0,266175797342769;0
+"9";2019-02-23;"Amiens SC";"OGC Nice";1;0;26;1;0,710448721921784;1
+"10";2019-02-17;"Stade de Reims";"Stade Rennais FC";2;0;25;1;0,218819674219329;0
+"11";2019-02-15;"Olympique Lyonnais";"EA Guingamp";2;1;25;0;0,668461637413103;1
+"12";2019-02-10;"Toulouse FC";"Stade de Reims";1;1;24;0;0,675530884622519;1
+"13";2019-02-10;"Stade Rennais FC";"AS Saint-Etienne";3;0;24;1;0,518312134710001;1
+"14";2019-02-09;"Amiens SC";"SM Caen";1;0;24;1;0,693077223010741;1
+"15";2019-02-02;"Stade Rennais FC";"Amiens SC";1;0;23;1;0,627582054535884;1
+"16";2019-01-26;"OGC Nice";"Nîmes Olympique";2;0;22;1;0,776582480807219;1
+"17";2019-01-19;"Paris Saint-Germain";"EA Guingamp";9;0;19;1;0,562568197577729;1
+"18";2019-01-19;"AS Monaco";"RC Strasbourg Alsace";1;5;21;0;0,318065990779974;0
+"19";2019-01-19;"Nîmes Olympique";"Toulouse FC";0;1;20;1;0,465121394276711;0
+"20";2019-01-13;"FC Nantes";"Stade Rennais FC";0;1;19;1;0,272602286659276;0
+"21";2019-01-12;"OGC Nice";"Girondins de Bordeaux";1;0;19;1;1,0144706398748;1
+"22";2018-12-22;"AS Monaco";"EA Guingamp";0;2;18;1;0,689520922176217;1
+"23";2018-12-16;"OGC Nice";"AS Saint-Etienne";1;1;17;0;0,846950948242775;1
+"24";2018-12-09;"LOSC";"Stade de Reims";1;1;17;0;0,579543426468627;1
+"25";2018-12-05;"Girondins de Bordeaux";"AS Saint-Etienne";3;2;16;0;0,408444015348108;0
+"26";2018-12-04;"Montpellier Hérault SC";"LOSC";0;1;16;1;0,317913930647428;0
+"27";2018-11-25;"Montpellier Hérault SC";"Stade Rennais FC";2;2;14;0;0,254657961828141;0
+"28";2018-11-25;"Amiens SC";"Olympique de Marseille";1;3;14;0;0,275414934879347;0
+"29";2018-11-24;"Paris Saint-Germain";"Toulouse FC";1;0;14;1;0,438550397332417;0
+"30";2018-11-24;"SM Caen";"AS Monaco";0;1;14;1;0,352453514486212;0
+"31";2018-11-24;"Dijon FCO";"Girondins de Bordeaux";0;0;14;1;0,87054093332392;1
+"32";2018-11-24;"FC Nantes";"Angers SCO";1;1;14;0;0,453778586522821;0
+"33";2018-11-10;"AS Saint-Etienne";"Stade de Reims";2;0;13;1;0,500643657876245;1
+"34";2018-11-09;"LOSC";"RC Strasbourg Alsace";0;0;13;1;0,154346015742656;0
+"35";2018-11-03;"Dijon FCO";"Nîmes Olympique";0;4;12;1;0,706745780297446;1
+"36";2018-11-03;"RC Strasbourg Alsace";"Toulouse FC";1;1;12;0;0,450963369877352;0
+"37";2018-10-28;"Olympique de Marseille";"Paris Saint-Germain";0;2;11;1;0,391383514936517;0
+"38";2018-10-27;"Angers SCO";"Olympique Lyonnais";1;2;11;0;0,411644624072811;0
+"39";2018-10-27;"Toulouse FC";"Montpellier Hérault SC";0;3;11;1;0,51516759862905;1
+"40";2018-10-21;"AS Saint-Etienne";"Stade Rennais FC";1;1;10;0;0,0563890310794967;0
+"41";2018-10-20;"Stade de Reims";"Angers SCO";1;1;10;0;-0,0305876590898145;0
+"42";2018-10-19;"Olympique Lyonnais";"Nîmes Olympique";2;0;10;1;0,549986957216121;1
+"43";2018-10-07;"Olympique de Marseille";"SM Caen";2;0;9;1;0,611895667128676;1
+"44";2018-10-07;"Paris Saint-Germain";"Olympique Lyonnais";5;0;9;1;0,426629353437344;0
+"45";2018-10-06;"Amiens SC";"Dijon FCO";1;0;9;1;0,848683395791402;1
+"46";2018-10-06;"Nîmes Olympique";"Stade de Reims";0;0;9;1;0,573018896607581;1
+"47";2019-05-25;"Amiens SC";"EA Guingamp";NA;NA;31;NA;0,461798701978769;0
+"48";2019-05-25;"Angers SCO";"AS Saint-Etienne";NA;NA;31;NA;0,36694891752332;0
+"49";2019-05-25;"SM Caen";"Girondins de Bordeaux";NA;NA;31;NA;0,485422984441691;0
+"50";2019-05-25;"Dijon FCO";"Toulouse FC";NA;NA;31;NA;0,490501595258456;0
+"51";2019-05-25;"Olympique de Marseille";"Montpellier Hérault SC";NA;NA;31;NA;0,500307410229765;1
+"52";2019-05-25;"FC Nantes";"RC Strasbourg Alsace";NA;NA;30;NA;0,199249400730428;0
+"53";2019-05-25;"OGC Nice";"AS Monaco";NA;NA;31;NA;0,695980658084094;1
+"54";2019-05-25;"Nîmes Olympique";"Olympique Lyonnais";NA;NA;31;NA;0,304696724447154;0
+"55";2019-05-25;"Stade de Reims";"Paris Saint-Germain";NA;NA;31;NA;0,366703103507718;0
+"56";2019-05-25;"Stade Rennais FC";"LOSC";NA;NA;31;NA;0,278666112008025;0
+"57";2019-05-18;"Girondins de Bordeaux";"Stade de Reims";NA;NA;31;NA;0,304145351556966;0
+"58";2019-05-18;"EA Guingamp";"Nîmes Olympique";NA;NA;31;NA;0,24943253246861;0
+"59";2019-05-18;"LOSC";"Angers SCO";NA;NA;31;NA;0,608932735424189;1
+"60";2019-05-18;"Olympique Lyonnais";"SM Caen";NA;NA;31;NA;0,760722773911273;1
+"61";2019-05-18;"AS Monaco";"Amiens SC";NA;NA;31;NA;0,640449158992294;1
+"62";2019-05-18;"Montpellier Hérault SC";"FC Nantes";NA;NA;31;NA;0,78197788720979;1
+"63";2019-05-18;"Paris Saint-Germain";"Dijon FCO";NA;NA;30;NA;0,629843274891751;1
+"64";2019-05-18;"AS Saint-Etienne";"OGC Nice";NA;NA;31;NA;0,644135216487115;1
+"65";2019-05-18;"RC Strasbourg Alsace";"Stade Rennais FC";NA;NA;31;NA;0,212624274940887;0
+"66";2019-05-18;"Toulouse FC";"Olympique de Marseille";NA;NA;31;NA;0,269877051474343;0
+"67";2019-05-12;"Olympique de Marseille";"Olympique Lyonnais";NA;NA;31;NA;0,392090562194556;0
+"68";2019-05-11;"Amiens SC";"Toulouse FC";NA;NA;31;NA;0,341111186739133;0
+"69";2019-05-11;"Angers SCO";"Paris Saint-Germain";NA;NA;31;NA;0,396860220488425;0
+"70";2019-05-11;"SM Caen";"Stade de Reims";NA;NA;31;NA;0,358122106689904;0
+"71";2019-05-11;"Dijon FCO";"RC Strasbourg Alsace";NA;NA;31;NA;0,372153206716913;0
+"72";2019-05-11;"LOSC";"Girondins de Bordeaux";NA;NA;31;NA;0,759030860291961;1
+"73";2019-05-11;"OGC Nice";"FC Nantes";NA;NA;31;NA;0,940157829895617;1
+"74";2019-05-11;"Nîmes Olympique";"AS Monaco";NA;NA;31;NA;0,448678912072406;0
+"75";2019-05-11;"Stade Rennais FC";"EA Guingamp";NA;NA;31;NA;0,557397949659653;1
+"76";2019-05-11;"AS Saint-Etienne";"Montpellier Hérault SC";NA;NA;31;NA;0,499361905224151;0
+"77";2019-05-04;"Girondins de Bordeaux";"Angers SCO";NA;NA;31;NA;0,281348104440981;0
+"78";2019-05-04;"EA Guingamp";"SM Caen";NA;NA;31;NA;0,46814315060727;0
+"79";2019-05-04;"Olympique Lyonnais";"LOSC";NA;NA;31;NA;0,459651226394257;0
+"80";2019-05-04;"AS Monaco";"AS Saint-Etienne";NA;NA;31;NA;0,514132390629076;1
+"81";2019-05-04;"Montpellier Hérault SC";"Amiens SC";NA;NA;31;NA;0,599970349261717;1
+"82";2019-05-04;"FC Nantes";"Dijon FCO";NA;NA;30;NA;0,506680605171468;1
+"83";2019-05-04;"Paris Saint-Germain";"OGC Nice";NA;NA;30;NA;0,588291917684861;1
+"84";2019-05-04;"Stade de Reims";"Nîmes Olympique";NA;NA;31;NA;0,286732054989059;0
+"85";2019-05-04;"RC Strasbourg Alsace";"Olympique de Marseille";NA;NA;31;NA;0,264745463719946;0
+"86";2019-05-04;"Toulouse FC";"Stade Rennais FC";NA;NA;31;NA;0,217755862695284;0
+"87";2019-05-01;"Stade Rennais FC";"AS Monaco";NA;NA;31;NA;0,475233921439703;0
+"88";2019-04-30;"Montpellier Hérault SC";"Paris Saint-Germain";NA;NA;31;NA;0,503564883863604;1
+"89";2019-04-28;"Amiens SC";"RC Strasbourg Alsace";NA;NA;31;NA;0,22276279819759;0
+"90";2019-04-28;"Angers SCO";"Stade de Reims";NA;NA;31;NA;0,407561163241464;0
+"91";2019-04-28;"SM Caen";"Dijon FCO";NA;NA;31;NA;0,532216324351338;1
+"92";2019-04-28;"LOSC";"Nîmes Olympique";NA;NA;31;NA;0,541057991268475;1
+"93";2019-04-28;"OGC Nice";"EA Guingamp";NA;NA;31;NA;0,778144686304044;1
+"94";2019-04-28;"AS Saint-Etienne";"Toulouse FC";NA;NA;31;NA;0,496603757794507;0
+"95";2019-04-28;"Olympique de Marseille";"FC Nantes";NA;NA;31;NA;0,78024992163133;1
+"96";2019-04-26;"Girondins de Bordeaux";"Olympique Lyonnais";NA;NA;31;NA;0,183698052713338;0
+"97";2019-04-21;"FC Nantes";"Amiens SC";NA;NA;30;NA;0,418290910155107;0
+"98";2019-04-21;"Toulouse FC";"LOSC";NA;NA;31;NA;0,239873929889561;0
+"99";2019-04-21;"Stade de Reims";"AS Saint-Etienne";NA;NA;31;NA;0,336791800542613;0
+"100";2019-04-21;"Paris Saint-Germain";"AS Monaco";NA;NA;30;NA;0,47928394601194;0
+"101";2019-04-20;"EA Guingamp";"Olympique de Marseille";NA;NA;31;NA;0,197074724675036;0
+"102";2019-04-20;"Dijon FCO";"Stade Rennais FC";NA;NA;31;NA;0,310339205652187;0
+"103";2019-04-20;"OGC Nice";"SM Caen";NA;NA;31;NA;0,800484396169432;1
+"104";2019-04-20;"Nîmes Olympique";"Girondins de Bordeaux";NA;NA;31;NA;0,552444901042569;1
+"105";2019-04-20;"RC Strasbourg Alsace";"Montpellier Hérault SC";NA;NA;31;NA;0,3955448119768;0
+"106";2019-04-19;"Olympique Lyonnais";"Angers SCO";NA;NA;31;NA;0,609886899928327;1
+"107";2019-04-17;"FC Nantes";"Paris Saint-Germain";NA;NA;30;NA;0,321885444756994;0
+"108";2019-04-14;"Montpellier Hérault SC";"Toulouse FC";NA;NA;31;NA;0,499277228378581;0
+"109";2019-04-14;"Stade Rennais FC";"OGC Nice";NA;NA;31;NA;0,584241893112624;1
+"110";2019-04-14;"AS Saint-Etienne";"Girondins de Bordeaux";NA;NA;31;NA;0,638893233784357;1
+"111";2019-04-14;"LOSC";"Paris Saint-Germain";NA;NA;31;NA;0,621029039787135;1
+"112";2019-04-13;"Olympique de Marseille";"Nîmes Olympique";NA;NA;31;NA;0,421865869766485;0
+"113";2019-04-13;"SM Caen";"Angers SCO";NA;NA;31;NA;0,335324859573919;0
+"114";2019-04-13;"AS Monaco";"Stade de Reims";NA;NA;31;NA;0,554744636347221;1
+"115";2019-04-13;"RC Strasbourg Alsace";"EA Guingamp";NA;NA;31;NA;0,513474179786792;1
+"116";2019-04-12;"Dijon FCO";"Amiens SC";NA;NA;31;NA;0,591194716141593;1
+"117";2019-04-12;"FC Nantes";"Olympique Lyonnais";NA;NA;30;NA;0,212139088666406;0
+"118";2019-01-15;"Angers SCO";"Girondins de Bordeaux";1;2;19;0;0,340130309559755;0
+"119";2018-11-11;"AS Monaco";"Paris Saint-Germain";0;4;13;1;0,344808688106802;0
+"120";2018-12-02;"Girondins de Bordeaux";"Paris Saint-Germain";2;2;15;0;0,404323316468685;0
+"121";2019-01-13;"Toulouse FC";"RC Strasbourg Alsace";1;2;19;0;0,326529556407698;0
+"122";2019-02-10;"OGC Nice";"Olympique Lyonnais";1;0;24;1;0,65894936524109;1
+"123";2019-03-02;"Angers SCO";"AS Monaco";2;2;27;0;0,369217925337835;0
+"124";2019-04-01;"AS Saint-Etienne";"Nîmes Olympique";2;1;30;0;0,445866265081547;0
+"125";2018-11-24;"RC Strasbourg Alsace";"Nîmes Olympique";0;1;14;1;0,397289233141341;0
+"126";2018-12-22;"RC Strasbourg Alsace";"OGC Nice";2;0;19;1;0,858135743059426;1
+"127";2019-04-06;"Olympique Lyonnais";"Dijon FCO";1;3;31;0;0,736658179817653;1
+"128";2018-12-01;"LOSC";"Olympique Lyonnais";2;2;15;0;0,125594860312991;0
+"129";2018-12-22;"Paris Saint-Germain";"FC Nantes";1;0;17;1;0,603771630473502;1
+"130";2019-04-05;"Girondins de Bordeaux";"Olympique de Marseille";2;0;31;1;0,334029432138046;0
+"131";2018-12-08;"EA Guingamp";"Amiens SC";1;2;17;0;0,598989400963328;1
+"132";2018-11-23;"Olympique Lyonnais";"AS Saint-Etienne";1;0;14;1;0,545732892456243;1
+"133";2018-10-27;"LOSC";"SM Caen";1;0;11;1;0,430512269492546;0
+"134";2019-02-22;"RC Strasbourg Alsace";"LOSC";1;1;26;0;0,292774676575191;0
+"135";2018-12-01;"AS Monaco";"Montpellier Hérault SC";1;2;15;0;0,456233059851806;0
+"136";2019-03-31;"Toulouse FC";"Paris Saint-Germain";0;1;30;1;0,439257453086016;0
+"137";2019-01-23;"Nîmes Olympique";"Angers SCO";3;1;21;0;0,517676488608604;1
+"138";2019-01-08;"FC Nantes";"Montpellier Hérault SC";2;0;18;1;0,583101942169636;1
+"139";2019-03-15;"OGC Nice";"Toulouse FC";1;1;29;0;0,546358790479416;1
+"140";2018-12-05;"Olympique Lyonnais";"Stade Rennais FC";0;2;16;1;0,272654013628395;0
+"141";2019-02-13;"AS Saint-Etienne";"RC Strasbourg Alsace";2;1;24;0;0,293079036495188;0
+"142";2019-02-08;"Dijon FCO";"Olympique de Marseille";1;2;23;0;0,411899936760603;0
+"143";2019-03-03;"LOSC";"Dijon FCO";1;0;27;1;0,784324650748284;1
+"144";2019-03-09;"Amiens SC";"Nîmes Olympique";2;1;28;0;0,316506092609426;0
+"145";2018-11-02;"Paris Saint-Germain";"LOSC";2;1;12;0;0,216020577847683;0
+"146";2019-03-09;"AS Monaco";"Girondins de Bordeaux";1;1;28;0;0,624148785899636;1
+"147";2019-04-07;"Stade de Reims";"LOSC";1;1;31;0;0,190376093285235;0
+"148";2018-10-27;"Amiens SC";"FC Nantes";1;2;11;0;0,281056108119948;0
+"149";2019-01-12;"EA Guingamp";"AS Saint-Etienne";0;1;19;1;0,481769181367795;0
+"150";2018-12-23;"Girondins de Bordeaux";"Amiens SC";1;1;17;0;0,49285888920672;0
+"151";2018-11-04;"Montpellier Hérault SC";"Olympique de Marseille";3;0;12;1;0,271418599551629;0
+"152";2019-03-16;"SM Caen";"AS Saint-Etienne";0;5;29;1;0,264456932894299;0
+"153";2018-12-16;"Olympique Lyonnais";"AS Monaco";3;0;17;1;0,696500976370298;1
+"154";2018-11-03;"Stade de Reims";"AS Monaco";1;0;12;1;0,233276987993823;0
+"155";2019-02-10;"FC Nantes";"Nîmes Olympique";2;4;23;0;0,166813574353876;0
+"156";2018-12-16;"Nîmes Olympique";"LOSC";2;3;17;0;0,290484381311264;0
+"157";2019-02-24;"Montpellier Hérault SC";"Stade de Reims";2;4;26;0;0,490141164104956;0
+"158";2018-12-22;"Stade de Reims";"SM Caen";2;2;19;0;0,197903079403366;0
+"159";2019-03-31;"FC Nantes";"LOSC";2;3;29;0;0,124488497794317;0
+"160";2019-02-03;"Olympique Lyonnais";"Paris Saint-Germain";2;1;23;0;0,522728267360414;1
+"161";2018-10-07;"Girondins de Bordeaux";"FC Nantes";3;0;9;1;1,04678468040733;1
+"162";2019-02-23;"Paris Saint-Germain";"Nîmes Olympique";3;0;25;1;0,347778495121167;0
+"163";2019-02-17;"AS Saint-Etienne";"Paris Saint-Germain";0;1;25;1;0,387022833453523;0
+"164";2019-02-13;"SM Caen";"FC Nantes";0;1;24;1;0,561560458531016;1
+"165";2018-10-27;"EA Guingamp";"RC Strasbourg Alsace";1;1;11;0;0,465544878266778;0
+"166";2019-01-27;"Toulouse FC";"Angers SCO";0;0;22;1;0,708023444768524;1
+"167";2018-10-20;"SM Caen";"EA Guingamp";0;0;10;1;0,741753077054222;1
+"168";2018-12-22;"AS Saint-Etienne";"Dijon FCO";3;0;18;1;0,549792197960651;1
+"169";2019-02-24;"FC Nantes";"Girondins de Bordeaux";1;0;26;1;0,523317927238006;1
+"170";2018-12-05;"FC Nantes";"Olympique de Marseille";3;2;16;0;0,264162876284553;0
+"171";2019-02-15;"Nîmes Olympique";"Dijon FCO";2;0;25;1;0,700358189606586;1
+"172";2018-12-04;"OGC Nice";"Angers SCO";0;0;16;1;0,855999269951875;1
+"173";2019-04-09;"Nîmes Olympique";"Stade Rennais FC";3;1;31;0;0,259238937306077;0
+"174";2019-02-17;"LOSC";"Montpellier Hérault SC";0;0;25;1;0,611523041698023;1
+"175";2019-02-09;"Paris Saint-Germain";"Girondins de Bordeaux";1;0;22;1;0,493593663447037;0
+"176";2019-03-10;"Toulouse FC";"EA Guingamp";1;0;28;1;0,591785677304554;1
+"177";2019-01-13;"Olympique de Marseille";"AS Monaco";1;1;18;0;0,480430760180766;0
+"178";2018-12-09;"RC Strasbourg Alsace";"SM Caen";2;2;17;0;0,601747481921761;1
+"179";2019-03-16;"Nîmes Olympique";"RC Strasbourg Alsace";2;2;28;0;0,323590246412543;0
+"180";2018-12-02;"Toulouse FC";"Dijon FCO";2;2;15;0;0,608796938386104;1
+"181";2018-12-05;"Dijon FCO";"EA Guingamp";2;1;16;0;0,933951648607139;1
+"182";2019-02-20;"Girondins de Bordeaux";"EA Guingamp";0;0;25;1;0,421576116204974;0
+"183";2018-12-18;"SM Caen";"Toulouse FC";2;1;18;0;0,552536387984474;1
+"184";2019-02-24;"Stade Rennais FC";"Olympique de Marseille";1;1;26;0;0,24038371325748;0
+"185";2019-04-06;"Nîmes Olympique";"SM Caen";2;0;30;1;0,606218225926906;1
+"186";2019-01-26;"RC Strasbourg Alsace";"Girondins de Bordeaux";1;0;22;1;0,706701759626679;1
+"187";2019-03-30;"Olympique de Marseille";"Angers SCO";2;2;30;0;0,48716769663675;0
+"188";2018-11-25;"OGC Nice";"LOSC";2;0;14;1;0,905314855816704;1
+"189";2018-12-22;"Angers SCO";"Olympique de Marseille";1;1;17;0;0,0660191753478699;0
+"190";2018-10-20;"RC Strasbourg Alsace";"AS Monaco";2;1;10;0;0,706190499732576;1
+"191";2018-11-11;"Stade Rennais FC";"FC Nantes";1;1;13;0;0,70577426241267;1
+"192";2019-03-05;"Girondins de Bordeaux";"Montpellier Hérault SC";1;2;27;0;0,266145322640283;0
+"193";2019-01-12;"Amiens SC";"Paris Saint-Germain";0;3;20;1;0,48990029411841;0
+"194";2019-02-02;"AS Monaco";"Toulouse FC";2;1;23;0;0,710303837907596;1
+"195";2019-03-02;"Stade de Reims";"Amiens SC";2;2;27;0;0,435852957624051;0
+"196";2018-11-03;"OGC Nice";"Amiens SC";1;0;12;1;1,29003079620946;1
+"197";2018-12-02;"Olympique de Marseille";"Stade de Reims";0;0;15;1;0,620079578397486;1
+"198";2018-12-08;"Stade Rennais FC";"Dijon FCO";2;0;17;1;0,949109822063583;1
+"199";2019-01-30;"FC Nantes";"AS Saint-Etienne";1;1;22;0;0,191704949691657;0
+"200";2019-01-18;"LOSC";"Amiens SC";2;1;21;0;0,716208477494764;1
+"201";2019-04-06;"EA Guingamp";"AS Monaco";1;1;31;0;0,370485639715549;0
+"202";2018-12-05;"RC Strasbourg Alsace";"Paris Saint-Germain";1;1;16;0;0,443871209687144;0
+"203";2018-11-11;"Girondins de Bordeaux";"SM Caen";0;0;13;1;0,522530693755843;1
+"204";2019-01-16;"AS Monaco";"OGC Nice";1;1;20;0;0,751152242546891;1
+"205";2018-12-04;"Amiens SC";"AS Monaco";0;2;16;1;0,625777169823271;1
+"206";2019-01-26;"EA Guingamp";"Stade de Reims";0;1;22;1;0,5655341854027;1
+"207";2018-11-10;"Nîmes Olympique";"OGC Nice";0;1;13;1;0,550749225030698;1
+"208";2018-12-02;"Stade Rennais FC";"RC Strasbourg Alsace";1;4;15;0;0,25082372181652;0
+"209";2018-12-01;"Angers SCO";"SM Caen";1;1;15;0;0,63032742818485;1
+"210";2018-10-26;"Nîmes Olympique";"AS Saint-Etienne";1;1;11;0;0,40675181084613;0
+"211";2019-01-27;"Paris Saint-Germain";"Stade Rennais FC";4;1;20;0;0,249217052703882;0
+"212";2019-01-20;"SM Caen";"Olympique de Marseille";0;1;21;1;0,306099035528329;0
+"213";2019-03-17;"Girondins de Bordeaux";"Stade Rennais FC";1;1;29;0;0,178707380594446;0
+"214";2019-01-27;"Montpellier Hérault SC";"SM Caen";2;0;21;1;0,559736207400014;1
+"215";2019-01-19;"Stade de Reims";"OGC Nice";1;1;21;0;0,392423346989928;0
+"216";2019-02-03;"Nîmes Olympique";"Montpellier Hérault SC";1;1;23;0;0,498149825524;0
+"217";2019-01-11;"SM Caen";"LOSC";1;3;20;0;0,192164447973648;0
+"218";2019-03-17;"Stade de Reims";"FC Nantes";1;0;29;1;0,742289990676095;1
+"219";2019-04-03;"RC Strasbourg Alsace";"Stade de Reims";4;0;30;1;0,505909414770921;1
+"220";2019-01-16;"EA Guingamp";"Stade Rennais FC";2;1;20;0;0,398072710338815;0
+"221";2019-02-10;"EA Guingamp";"LOSC";0;2;23;1;0,274061631979753;0
+"222";2019-04-07;"Paris Saint-Germain";"RC Strasbourg Alsace";2;2;30;0;0,245276517526511;0
+"223";2019-01-25;"Olympique de Marseille";"LOSC";1;2;21;0;0,270040338574419;0
+"224";2019-03-10;"Montpellier Hérault SC";"Angers SCO";2;2;28;0;0,585807696481079;1
+"225";2019-01-16;"Nîmes Olympique";"FC Nantes";1;0;19;1;0,74071612674005;1
+"226";2019-04-07;"OGC Nice";"Montpellier Hérault SC";1;0;31;1;0,700177035597615;1
+"227";2019-02-20;"Paris Saint-Germain";"Montpellier Hérault SC";5;1;24;0;0,356172708795225;0
+"228";2019-01-27;"Amiens SC";"Olympique Lyonnais";0;1;22;1;0,391844626123924;0
+"229";2019-01-20;"Angers SCO";"FC Nantes";1;0;20;1;0,652927181612994;1
+"230";2019-03-10;"Olympique de Marseille";"OGC Nice";1;0;28;1;0,745990721395957;1
+"231";2018-10-28;"Girondins de Bordeaux";"OGC Nice";0;1;11;1;0,786444992345929;1
+"232";2019-03-03;"Olympique de Marseille";"AS Saint-Etienne";2;0;27;1;0,606151978965765;1
+"233";2018-12-01;"EA Guingamp";"OGC Nice";0;0;15;1;0,971778801451541;1
+"234";2019-01-11;"Olympique Lyonnais";"Stade de Reims";1;1;19;0;0,526240534487704;1
+"235";2019-02-09;"RC Strasbourg Alsace";"Angers SCO";1;2;23;0;0,504280697943354;1
+"236";2018-10-20;"Paris Saint-Germain";"Amiens SC";5;0;10;1;0,477461162818946;0
+"237";2019-02-24;"Toulouse FC";"SM Caen";1;1;26;0;0,566198604924642;1
+"238";2018-10-21;"OGC Nice";"Olympique de Marseille";0;1;10;1;0,819694869505724;1
+"239";2019-03-03;"EA Guingamp";"FC Nantes";0;0;27;1;0,638588164241496;1
+"240";2019-03-10;"Stade Rennais FC";"SM Caen";3;1;27;0;0,554410311421963;1
+"241";2018-10-06;"LOSC";"AS Saint-Etienne";3;1;9;0;0,342899998250122;0
+"242";2018-11-04;"FC Nantes";"EA Guingamp";5;0;12;1;0,840872217856642;1
+"243";2019-02-01;"LOSC";"OGC Nice";4;0;23;1;0,874543251960343;1
+"244";2019-03-15;"LOSC";"AS Monaco";0;1;29;1;0,59166861282854;1
+"245";2019-03-31;"Dijon FCO";"OGC Nice";0;1;30;1;0,536965043957179;1
+"246";2019-02-02;"Stade de Reims";"Olympique de Marseille";2;1;23;0;0,267660723841601;0
+"247";2019-01-16;"Toulouse FC";"Olympique Lyonnais";2;2;20;0;0,465590965250879;0
+"248";2019-03-29;"Stade Rennais FC";"Olympique Lyonnais";0;1;29;1;0,30124021833069;0
+"249";2019-01-20;"Girondins de Bordeaux";"Dijon FCO";1;0;20;1;0,614268810646928;1
+"250";2019-01-16;"AS Saint-Etienne";"Olympique de Marseille";2;1;20;0;0,28065661765679;0
+"251";2019-01-20;"AS Saint-Etienne";"Olympique Lyonnais";1;2;21;0;0,178006899976089;0
+"252";2019-03-31;"AS Monaco";"SM Caen";0;1;30;1;0,548271517072992;1
+"253";2018-11-04;"AS Saint-Etienne";"Angers SCO";4;3;12;0;0,454197369086352;0
+"254";2018-12-15;"Stade de Reims";"RC Strasbourg Alsace";2;1;18;0;0,13183922442424;0
+"255";2019-01-08;"Amiens SC";"Angers SCO";0;0;19;1;0,705555665822141;1
+"256";2019-02-02;"Angers SCO";"Dijon FCO";1;0;23;1;0,508764146947073;1
+"257";2019-02-05;"Olympique de Marseille";"Girondins de Bordeaux";1;0;23;1;0,631329187416745;1
+"258";2019-01-20;"Stade Rennais FC";"Montpellier Hérault SC";0;0;21;1;0,618731254001475;1
+"259";2019-02-23;"EA Guingamp";"Angers SCO";1;0;26;1;0,485692277655788;0
+"260";2018-10-21;"Montpellier Hérault SC";"Girondins de Bordeaux";2;0;10;1;0,563249475753905;1
+"261";2019-03-09;"RC Strasbourg Alsace";"Olympique Lyonnais";2;2;28;0;0,353330271527101;0
+"262";2018-10-28;"Stade Rennais FC";"Stade de Reims";0;2;11;1;0,386458496926893;0
+"263";2018-11-11;"Olympique de Marseille";"Dijon FCO";2;0;13;1;0,865713738285999;1
+"264";2018-10-07;"AS Monaco";"Stade Rennais FC";1;2;9;0;0,0557530527861566;0
+"265";2019-02-16;"Angers SCO";"OGC Nice";3;0;25;1;0,585601850215498;1
+"266";2018-10-20;"FC Nantes";"Toulouse FC";4;0;10;1;0,464166524395208;0
+"267";2018-11-10;"Angers SCO";"Montpellier Hérault SC";1;0;13;1;0,630453481790736;1
+"268";2019-03-16;"EA Guingamp";"Dijon FCO";1;0;29;1;0,676506266313181;1
+"269";2019-02-16;"AS Monaco";"FC Nantes";1;0;25;1;0,974842835684419;1
+"270";2019-03-17;"Olympique Lyonnais";"Montpellier Hérault SC";3;2;29;0;0,528865860027124;1
+"271";2018-11-10;"Toulouse FC";"Amiens SC";0;1;13;1;0,417572412890618;0
+"272";2019-02-16;"Olympique de Marseille";"Amiens SC";2;0;25;1;0,652205322741347;1
+"273";2018-12-01;"Nîmes Olympique";"Amiens SC";3;0;15;1;0,685804923129226;1
+"274";2019-02-17;"Girondins de Bordeaux";"Toulouse FC";2;1;24;0;0,382761291439893;0
+"275";2019-02-22;"Dijon FCO";"AS Saint-Etienne";0;1;25;1;0,421640428331537;0
+"276";2018-12-22;"Stade Rennais FC";"Nîmes Olympique";4;0;18;1;0,57394765512916;1
+"277";2019-03-09;"Dijon FCO";"Stade de Reims";1;1;27;0;0,453257803421634;0
+"278";2018-12-22;"Montpellier Hérault SC";"Olympique Lyonnais";1;1;17;0;0,280822442548376;0
+"279";2019-04-06;"Amiens SC";"AS Saint-Etienne";2;2;31;0;0,308261450145372;0
+"280";2018-11-03;"Olympique Lyonnais";"Girondins de Bordeaux";1;1;12;0;0,443281289502619;0
+"281";2018-11-10;"EA Guingamp";"Olympique Lyonnais";2;4;13;0;0,512202526905457;1
+"282";2018-11-30;"AS Saint-Etienne";"FC Nantes";3;0;15;1;0,648179152114423;1
+"283";2019-02-17;"SM Caen";"RC Strasbourg Alsace";0;0;25;1;0,211903467648847;0
+"284";2018-10-06;"EA Guingamp";"Montpellier Hérault SC";1;1;9;0;0,918819476399525;1
+"285";2018-11-24;"Stade de Reims";"EA Guingamp";2;1;14;0;0,343582358714097;0
+"286";2018-10-06;"Angers SCO";"RC Strasbourg Alsace";2;2;9;0;0,325601145331411;0
+"287";2019-04-07;"Toulouse FC";"FC Nantes";1;0;31;1;0,733753665618466;1
+"288";2019-04-03;"Montpellier Hérault SC";"EA Guingamp";2;0;30;1;0,727672836496543;1
+"289";2018-11-03;"SM Caen";"Stade Rennais FC";1;2;12;0;0,0340755874770012;0
+"290";2019-02-10;"Montpellier Hérault SC";"AS Monaco";2;2;23;0;0,530841267477055;1
+"291";2018-10-20;"Dijon FCO";"LOSC";1;2;10;0;0,595651625927389;1
+"292";2018-12-22;"LOSC";"Toulouse FC";1;2;19;0;0,54551956778525;1
+"293";2019-02-24;"AS Monaco";"Olympique Lyonnais";2;0;26;1;0,524950741213842;1
+"294";2019-03-12;"Dijon FCO";"Paris Saint-Germain";0;4;28;1;0,414261969937571;0
+"295";2018-12-05;"SM Caen";"Nîmes Olympique";1;2;16;0;0,163672266380337;0
+"296";2018-10-27;"AS Monaco";"Dijon FCO";2;2;11;0;0,527903926224312;1
+"297";2018-12-05;"Stade de Reims";"Toulouse FC";0;1;16;1;0,122634498183432;0
+"298";2019-01-26;"Dijon FCO";"AS Monaco";2;0;21;1;0,791130479147737;1
+"299";2019-01-13;"Dijon FCO";"Montpellier Hérault SC";1;1;19;0;0,586532363865501;1

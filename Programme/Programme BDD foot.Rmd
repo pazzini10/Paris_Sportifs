@@ -4,6 +4,15 @@ author: "David Flouriot"
 date: "05/04/2019"
 output: html_document
 ---
+```{r}
+# A modeliser :
+
+# Nb buts dans le matchs
+# But ou pas des deux equipes
+# Victoire nul ou défaite
+# Prédire + ou - 2,5 buts
+
+```
 
 #Définition de proxy si besoin
 ```{r}
@@ -64,8 +73,11 @@ library(RCurl)
 library(dplyr)
 library(esquisse)
 library(cronR)
+library(caret)
+library(MASS)
+library(pls)
 
-
+ 
   
 
 ```
@@ -178,6 +190,139 @@ face_a_soccerstat1= face_a_soccerstat %>%
 
 ```
 
+#Scrapping calendrier ligue1 sur le site de la LFP
+```{r}
+ 
+
+# initialisaiton du data.frame de sortie
+fetch_l1_calendar=NULL
+
+for (saison in c(102:102)) {
+  #saison=20
+  calendar=NULL
+  
+ 
+  # boucle sur les journee
+  for (j in 1:38){
+    #j=2
+    #saison=100
+    # creation de l'url de requete
+   
+    url <- paste0("http://www.lfp.fr/ligue1/competitionPluginCalendrierResultat/changeCalendrierJournee?sai=",saison,"&jour=",j)
+    
+    # extraction du code html
+    site <- read_html(url)
+    #save(site,file="site") 
+    # nombre de jour dans la journee
+    site %>% 
+      html_node("body") %>%
+      as.character() %>%
+      str_count("<h4>") -> n_day
+    
+    if (n_day!=0){
+      for (i in 1:n_day){
+        
+        # xpath match
+        xpath<-paste0('//*[@id="tableaux_rencontres"]/div/table[',i,']')
+        
+        # xpath date
+        xpath2<-paste0('//*[@id="tableaux_rencontres"]/div/h4[',i,']')
+        
+        # recuperation des matchs
+        site %>% 
+          html_node("body") %>%
+          html_node(xpath=xpath) %>%
+          html_table -> temp
+        
+        # recuperation de la date
+        site %>% 
+          html_node("body") %>%
+          html_node(xpath=xpath2) %>%
+          html_text -> temp2
+        
+        calendar <- rbind(calendar,cbind(j,temp2,temp))
+        
+      }
+    }  
+    } 
+    
+    # pour chaque jour recuperation de la date et des match
+    
+  
+  # supression des variables inutiles
+  calendar <- calendar[,c(1,2,3,4,6,8)]
+  
+  # renomage des colones
+  colnames(calendar) <- c("journee","date","time","home","score","away")
+  
+  # separation du score en deux variables
+  calendar <- cbind(calendar,str_split_fixed(calendar$score," - ",n = 2))
+  
+  # supression de l'ancienne colone de score
+  #calendar <- calendar[,-5]
+  
+  # renomage des colones de scores
+  colnames(calendar)[c(7,8)] <- c("home_score","away_score")
+  calendar[,7]<-as.numeric(as.character(calendar[,7]))
+  calendar[,8]<-as.numeric(as.character(calendar[,8]))
+  calendar$saison<-saison
+ 
+  
+  fetch_l1_calendar=rbind(fetch_l1_calendar,calendar)
+  print(saison)
+}
+
+#Rajout de la saison par année
+ref_saison = fetch_l1_calendar %>%
+  filter(journee==1) %>%
+  group_by(saison) %>%
+  filter(row_number()==1) %>%
+  ungroup() %>%
+  mutate(saison_annee=paste0(row_number()+1949,"/",row_number()+1950)) %>%
+  dplyr::select(saison,saison_annee)
+
+#On joint et on remet les colonnes dans le bon ordre
+fetch_l1_calendar_final= fetch_l1_calendar %>%
+  left_join(ref_saison,by="saison") %>%
+  dplyr::select(journee,date,time,home,score,away,home_score,away_score)
+
+# #On sauvegarde les fichiers
+# save(fetch_l1_calendar_final,file="/home/ldapusers/dflouriot/Analyse/Crawl_foot/Extraction_calendrier_L1.RData")
+# write.csv(fetch_l1_calendar_final,file="/home/ldapusers/dflouriot/Analyse/Crawl_foot/Extraction_calendrier_L1.csv")
+
+#
+fetch_l1_calendar_final$DD=sapply(strsplit(as.character(fetch_l1_calendar_final$date), " "), function(x) x[2])
+fetch_l1_calendar_final$MM=sapply(strsplit(as.character(fetch_l1_calendar_final$date), " "), function(x) x[3])
+fetch_l1_calendar_final$YY=sapply(strsplit(as.character(fetch_l1_calendar_final$date), " "), function(x) x[4])
+
+
+fetch_l1_calendar_final_=fetch_l1_calendar_final %>%
+  mutate(MM=
+           ifelse(MM=='janvier',01,
+           ifelse(MM=='février',02,
+           ifelse(MM=='mars',03,
+           ifelse(MM=='avril',04,
+           ifelse(MM=='mai',05,
+           ifelse(MM=='juin',06,
+           ifelse(MM=='juillet',07,
+           ifelse(MM=='août',08,
+           ifelse(MM=='septembre',09,
+           ifelse(MM=='octobre',10,
+           ifelse(MM=='novembre',11,
+           ifelse(MM=='décembre',12,00)))))))))))),
+         Date=as.Date(paste0(as.character(DD),"-",as.character(MM),"-",as.character(YY)),format='%d-%m-%Y')
+         ) %>%
+  rename(Team_home=home,
+         Team_away=away,
+         Final_H=home_score,
+         Final_A=away_score) %>%
+  mutate(Final_R=ifelse(Final_H>Final_A,'H',ifelse(Final_H<Final_A,'A','D'))) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_R,Final_H,Final_A)
+ 
+```
+
+
+
 #Récupération d'une base de données sur plusieurs championnats de foot avec un longue histo
 ```{r}
 score=read.csv2(file="/Users/dflouriot/R/Paris_Sportifs/BDD_histo_bet_scores.csv")
@@ -211,13 +356,77 @@ score_france= score %>%
   filter(Country=='France' & Season=='2018/2019' & League=='Ligue 1')
 ```
 
-#Création des indicateurs en fonction d'une journée
+#Trouver le classement à date de chaque équipe 
 
 ```{r}
-#Classement chaque jour en live
-class_home = score_france %>%
-  select(Date,Team_home,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
+#fetch_l1_calendar_final_ ou  score_france
+baso=fetch_l1_calendar_final_
+
+classement_home = baso %>%
+  dplyr::select(Date,Team_home,Final_R ) %>%
   mutate(points=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
+         nb_matchs=1) %>%
+  rename(Team=Team_home) %>%
+  dplyr::select(Date,Team,points,nb_matchs)
+
+classement_away = baso %>%
+  dplyr::select(Date,Team_away,Final_R ) %>%
+  mutate(points=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
+         nb_matchs=1) %>%
+  rename(Team=Team_away) %>%
+  dplyr::select(Date,Team,points,nb_matchs)
+
+classement_ens = rbind(classement_away,classement_home) %>%
+  arrange(Date)
+
+date_vector=unique(classement_ens$Date)
+
+classement_team=NULL
+
+ 
+for (i in date_vector) {
+  #i='2019-03-31'
+  class_tempo=classement_ens %>%
+    filter(Date<=i) %>%
+    #select(Team,points) %>%
+    group_by(Team) %>%
+    summarise(
+      
+      points=sum(as.numeric(as.character(points))),nb_matchs=sum(nb_matchs)) %>%
+       
+    arrange(desc(points)) %>%
+    ungroup() %>%
+    mutate(Date=as.Date(i,origin="1970-01-01"),classement=row_number()) %>%
+    dplyr::select(Team,classement,Date,nb_matchs)
+  
+  
+  classement_team=rbind(classement_team,class_tempo) 
+}
+
+ 
+score_france_= baso %>%
+  left_join(classement_team,by=c("Team_home"="Team","Date","Date")) %>%
+  rename(classement_H=classement) %>%
+  left_join(classement_team[,1:3],by=c("Team_away"="Team","Date","Date")) %>%
+  rename(classement_A=classement) %>%
+  mutate(classement_H=ifelse(is.na(Final_R)==T,NA,classement_H),
+         classement_A=ifelse(is.na(Final_R)==T,NA,classement_A))
+```
+
+#Création des indicateurs en fonction d'une journée (Version API PINACLE)
+
+```{r}
+
+
+#Classement chaque jour en live
+class_home = score_france_ %>%
+  select(Date,Team_home,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
+  mutate(
+    # pos_class_team_1_5=ifelse(classement_A<=5,1,0),
+    # pos_class_team_6_10=ifelse(classement_A<=10 & classement_A>=6,1,0),
+    # pos_class_team_11_15=ifelse(classement_A<=15 & classement_A>=11,1,0),
+    # pos_class_team_16_20=ifelse(classement_A<=20 & classement_A>=16,1,0),
+    points=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
          points_H=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
          points_A=0,
          nb_matchs_H=1,
@@ -248,12 +457,56 @@ class_home = score_france %>%
          nb_1p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=2,1,0),
          nb_2p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=3,1,0),
          nb_3p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=4,1,0),
-         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=5,1,0)
+         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_A))>=5,1,0),
+            marge_buts_0=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==0,1,0),
+         marge_buts_plus_1=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==1,1,0),
+         marge_buts_plus_2=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==2,1,0),
+         marge_buts_plus_3=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==3,1,0),
+         marge_buts_plus_4=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))>=4,1,0),
+         marge_buts_moins_1=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-1,1,0),
+        marge_buts_moins_2=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-2,1,0),
+        marge_buts_moins_3=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-3,1,0),
+        marge_buts_moins_4=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))<=-4,1,0),
+                 marge_buts_ecart_1=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==1,1,0),
+        marge_buts_ecart_2=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==2,1,0),
+        marge_buts_ecart_3=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==3,1,0),
+        marge_buts_ecart_4=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))>=4,1,0),
+            marge_buts_0_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==0,1,0),
+         marge_buts_plus_1_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==1,1,0),
+         marge_buts_plus_2_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==2,1,0),
+         marge_buts_plus_3_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==3,1,0),
+         marge_buts_plus_4_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))>=4,1,0),
+         marge_buts_moins_1_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-1,1,0),
+        marge_buts_moins_2_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-2,1,0),
+        marge_buts_moins_3_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-3,1,0),
+        marge_buts_moins_4_H=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))<=-4,1,0),
+        marge_buts_ecart_1_H=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==1,1,0),
+        marge_buts_ecart_2_H=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==2,1,0),
+        marge_buts_ecart_3_H=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==3,1,0),
+        marge_buts_ecart_4_H=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))>=4,1,0),
+                    marge_buts_0_A=0,
+         marge_buts_plus_1_A=0,
+         marge_buts_plus_2_A=0,
+         marge_buts_plus_3_A=0,
+         marge_buts_plus_4_A=0,
+         marge_buts_moins_1_A=0,
+        marge_buts_moins_2_A=0,
+        marge_buts_moins_3_A=0,
+        marge_buts_moins_4_A=0,
+        marge_buts_ecart_1_A=0,
+        marge_buts_ecart_2_A=0,
+        marge_buts_ecart_3_A=0,
+        marge_buts_ecart_4_A=0,
+           une_seule_equipe_marq=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+        deux_equipes_marq=ifelse(as.numeric(as.character(Final_A))>=1 & as.numeric(as.character(Final_H))>=1,1,0),
+        clean_sheet=ifelse(as.numeric(as.character(Final_A))==0,1,0),
+        clean_sheet_H=ifelse(as.numeric(as.character(Final_A))==0,1,0),
+        clean_sheet_A=as.numeric(0)
          ) %>%
   rename(Team=Team_home,buts_marq=Final_H,buts_enc=Final_A,
          buts_marq_mt1=First_H,buts_marq_mt2=Second_H,
          buts_enc_mt1=First_A,buts_enc_mt2=Second_A) %>%
-   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc)
+select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
 
 class_away = score_france %>%
   select(Date,Team_away,Final_R,First_R,Second_R,Final_H,Final_A,First_H,First_A,Second_H,Second_A) %>%
@@ -288,23 +541,68 @@ class_away = score_france %>%
          nb_1p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=2,1,0),
          nb_2p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=3,1,0),
          nb_3p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=4,1,0),
-         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=5,1,0)
+         nb_4p5_buts_enc=ifelse(as.numeric(as.character(Final_H))>=5,1,0),
+        marge_buts_0=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==0,1,0),
+         marge_buts_plus_1=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==1,1,0),
+         marge_buts_plus_2=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==2,1,0),
+         marge_buts_plus_3=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==3,1,0),
+         marge_buts_plus_4=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))>=4,1,0),
+         marge_buts_moins_1=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-1,1,0),
+        marge_buts_moins_2=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-2,1,0),
+        marge_buts_moins_3=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-3,1,0),
+        marge_buts_moins_4=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))<=-4,1,0),
+        marge_buts_ecart_1=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==1,1,0),
+        marge_buts_ecart_2=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==2,1,0),
+        marge_buts_ecart_3=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==3,1,0),
+        marge_buts_ecart_4=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))>=4,1,0),
+            marge_buts_0_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==0,1,0),
+         marge_buts_plus_1_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==1,1,0),
+         marge_buts_plus_2_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==2,1,0),
+         marge_buts_plus_3_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==3,1,0),
+         marge_buts_plus_4_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))>=4,1,0),
+         marge_buts_moins_1_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-1,1,0),
+        marge_buts_moins_2_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-2,1,0),
+        marge_buts_moins_3_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))==-3,1,0),
+        marge_buts_moins_4_A=ifelse(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H))<=-4,1,0),
+        marge_buts_ecart_1_A=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==1,1,0),
+        marge_buts_ecart_2_A=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==2,1,0),
+        marge_buts_ecart_3_A=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))==3,1,0),
+        marge_buts_ecart_4_A=ifelse(abs(as.numeric(as.character(Final_A))-as.numeric(as.character(Final_H)))>=4,1,0),
+                    marge_buts_0_H=0,
+         marge_buts_plus_1_H=0,
+         marge_buts_plus_2_H=0,
+         marge_buts_plus_3_H=0,
+         marge_buts_plus_4_H=0,
+         marge_buts_moins_1_H=0,
+        marge_buts_moins_2_H=0,
+        marge_buts_moins_3_H=0,
+        marge_buts_moins_4_H=0,
+        marge_buts_ecart_1_H=0,
+        marge_buts_ecart_2_H=0,
+        marge_buts_ecart_3_H=0,
+        marge_buts_ecart_4_H=0,
+        une_seule_equipe_marq=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+        deux_equipes_marq=ifelse(as.numeric(as.character(Final_A))>=1 & as.numeric(as.character(Final_H))>=1,1,0),
+        clean_sheet=ifelse(as.numeric(as.character(Final_H))==0,1,0),
+        clean_sheet_A=ifelse(as.numeric(as.character(Final_H))==0,1,0),
+        clean_sheet_H=as.numeric(0)
          ) %>%
   rename(Team=Team_away,buts_marq=Final_A,buts_enc=Final_H,
          buts_marq_mt1=First_A,buts_marq_mt2=Second_A,
          buts_enc_mt1=First_H,buts_enc_mt2=Second_H)  %>%
-   select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc)
+select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,buts_marq_mt1,buts_marq_mt2,buts_enc_mt1,buts_enc_mt2,mt1_points,mt2_points,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
 
 class_ens = rbind(class_away,class_home) %>%
   arrange(Date)
 
-date_vect=unique(class_ens$Date)
+date_vect=unique(class_ens$Date)  
+  
 
 classement=NULL
-for (i in date_vect) {
-  i='2019-03-31'
+for (i in date_vect[-c(1:6)]) {
+  #i='2019-03-31'
   class_temp=class_ens %>%
-    filter(Date<=i) %>%
+    filter(Date<i) %>%
     #select(Team,points) %>%
     group_by(Team) %>%
     summarise(
@@ -349,7 +647,51 @@ for (i in date_vect) {
       nb_1p5_buts_enc=sum(nb_1p5_buts_enc),
       nb_2p5_buts_enc=sum(nb_2p5_buts_enc),
       nb_3p5_buts_enc=sum(nb_3p5_buts_enc),
-      nb_4p5_buts_enc=sum(nb_4p5_buts_enc)
+      nb_4p5_buts_enc=sum(nb_4p5_buts_enc),
+      marge_buts_0=sum(marge_buts_0),
+      marge_buts_plus_1=sum(marge_buts_plus_1),
+      marge_buts_plus_2=sum(marge_buts_plus_2),
+      marge_buts_plus_3=sum(marge_buts_plus_3),
+      marge_buts_plus_4=sum(marge_buts_plus_4),
+      marge_buts_moins_1=sum(marge_buts_moins_1),
+      marge_buts_moins_2=sum(marge_buts_moins_2),
+      marge_buts_moins_3=sum(marge_buts_moins_3),
+      marge_buts_moins_4=sum(marge_buts_moins_4),
+      marge_buts_ecart_1=sum(marge_buts_ecart_1),
+      marge_buts_ecart_2=sum(marge_buts_ecart_2),
+      marge_buts_ecart_3=sum(marge_buts_ecart_3),
+      marge_buts_ecart_4=sum(marge_buts_ecart_4),
+      marge_buts_0_H=sum(marge_buts_0_H),
+      marge_buts_plus_1_H=sum(marge_buts_plus_1_H),
+      marge_buts_plus_2_H=sum(marge_buts_plus_2_H),
+      marge_buts_plus_3_H=sum(marge_buts_plus_3_H),
+      marge_buts_plus_4_H=sum(marge_buts_plus_4_H),
+      marge_buts_moins_1_H=sum(marge_buts_moins_1_H),
+      marge_buts_moins_2_H=sum(marge_buts_moins_2_H),
+      marge_buts_moins_3_H=sum(marge_buts_moins_3_H),
+      marge_buts_moins_4_H=sum(marge_buts_moins_4_H),
+      marge_buts_ecart_1_H=sum(marge_buts_ecart_1_H),
+      marge_buts_ecart_2_H=sum(marge_buts_ecart_2_H),
+      marge_buts_ecart_3_H=sum(marge_buts_ecart_3_H),
+      marge_buts_ecart_4_H=sum(marge_buts_ecart_4_H),
+      marge_buts_0_A=sum(marge_buts_0_A),
+      marge_buts_plus_1_A=sum(marge_buts_plus_1_A),
+      marge_buts_plus_2_A=sum(marge_buts_plus_2_A),
+      marge_buts_plus_3_A=sum(marge_buts_plus_3_A),
+      marge_buts_plus_4_A=sum(marge_buts_plus_4_A),
+      marge_buts_moins_1_A=sum(marge_buts_moins_1_A),
+      marge_buts_moins_2_A=sum(marge_buts_moins_2_A),
+      marge_buts_moins_3_A=sum(marge_buts_moins_3_A),
+      marge_buts_moins_4_A=sum(marge_buts_moins_4_A),
+      marge_buts_ecart_1_A=sum(marge_buts_ecart_1_A),
+      marge_buts_ecart_2_A=sum(marge_buts_ecart_2_A),
+      marge_buts_ecart_3_A=sum(marge_buts_ecart_3_A),
+      marge_buts_ecart_4_A=sum(marge_buts_ecart_4_A),
+      une_seule_equipe_marq=sum(une_seule_equipe_marq),
+        deux_equipes_marq=sum(deux_equipes_marq),
+        clean_sheet=sum(clean_sheet),
+      clean_sheet_H=sum(clean_sheet_H),
+      clean_sheet_A=sum(clean_sheet_A)
       
       ) %>%
     arrange(desc(points)) %>%
@@ -383,7 +725,47 @@ for (i in date_vect) {
            part_nb_1p5_buts_enc=nb_1p5_buts_enc/nb_matchs,
            part_nb_2p5_buts_enc=nb_2p5_buts_enc/nb_matchs,
            part_nb_3p5_buts_enc=nb_3p5_buts_enc/nb_matchs,
-           part_nb_4p5_buts_enc=nb_4p5_buts_enc/nb_matchs
+           part_nb_4p5_buts_enc=nb_4p5_buts_enc/nb_matchs,
+           part_marge_buts_0=marge_buts_0/nb_matchs,
+      part_marge_buts_0=marge_buts_0/nb_matchs,
+      part_marge_buts_plus_1=marge_buts_plus_1/nb_matchs,
+      part_marge_buts_plus_2=marge_buts_plus_2/nb_matchs,
+      part_marge_buts_plus_3=marge_buts_plus_3/nb_matchs,
+      part_marge_buts_plus_4=marge_buts_plus_4/nb_matchs,
+      part_marge_buts_moins_1=marge_buts_moins_1/nb_matchs,
+      part_marge_buts_moins_2=marge_buts_moins_2/nb_matchs,
+      part_marge_buts_moins_3=marge_buts_moins_3/nb_matchs,
+      part_marge_buts_moins_4=marge_buts_moins_4/nb_matchs,
+      part_marge_buts_ecart_1=marge_buts_ecart_1/nb_matchs,
+      part_marge_buts_ecart_2=marge_buts_ecart_2/nb_matchs,
+      part_marge_buts_ecart_3=marge_buts_ecart_3/nb_matchs,
+      part_marge_buts_ecart_4=marge_buts_ecart_4/nb_matchs,
+      part_marge_buts_0_H=marge_buts_0_H/nb_matchs_H,
+      part_marge_buts_plus_1_H=marge_buts_plus_1_H/nb_matchs_H,
+      part_marge_buts_plus_2_H=marge_buts_plus_2_H/nb_matchs_H,
+      part_marge_buts_plus_3_H=marge_buts_plus_3_H/nb_matchs_H,
+      part_marge_buts_plus_4_H=marge_buts_plus_4_H/nb_matchs_H,
+      part_marge_buts_moins_1_H=marge_buts_moins_1_H/nb_matchs_H,
+      part_marge_buts_moins_2_H=marge_buts_moins_2_H/nb_matchs_H,
+      part_marge_buts_moins_3_H=marge_buts_moins_3_H/nb_matchs_H,
+      part_marge_buts_moins_4_H=marge_buts_moins_4_H/nb_matchs_H,
+      part_marge_buts_ecart_1_H=marge_buts_ecart_1_H/nb_matchs_H,
+      part_marge_buts_ecart_2_H=marge_buts_ecart_2_H/nb_matchs_H,
+      part_marge_buts_ecart_3_H=marge_buts_ecart_3_H/nb_matchs_H,
+      part_marge_buts_ecart_4_H=marge_buts_ecart_4_H/nb_matchs_H,
+      part_marge_buts_0_A=marge_buts_0_A/nb_matchs_A,
+      part_marge_buts_plus_1_A=marge_buts_plus_1_A/nb_matchs_A,
+      part_marge_buts_plus_2_A=marge_buts_plus_2_A/nb_matchs_A,
+      part_marge_buts_plus_3_A=marge_buts_plus_3_A/nb_matchs_A,
+      part_marge_buts_plus_4_A=marge_buts_plus_4_A/nb_matchs_A,
+      part_marge_buts_moins_1_A=marge_buts_moins_1_A/nb_matchs_A,
+      part_marge_buts_moins_2_A=marge_buts_moins_2_A/nb_matchs_A,
+      part_marge_buts_moins_3_A=marge_buts_moins_3_A/nb_matchs_A,
+      part_marge_buts_moins_4_A=marge_buts_moins_4_A/nb_matchs_A,
+      part_marge_buts_ecart_1_A=marge_buts_ecart_1_A/nb_matchs_A,
+      part_marge_buts_ecart_2_A=marge_buts_ecart_2_A/nb_matchs_A,
+      part_marge_buts_ecart_3_A=marge_buts_ecart_3_A/nb_matchs_A,
+      part_marge_buts_ecart_4_A=marge_buts_ecart_4_A/nb_matchs_A
            
            ) %>%
     arrange(desc(points),desc(diff_buts)) %>%
@@ -394,9 +776,394 @@ for (i in date_vect) {
   classement=rbind(classement,class_temp) 
 }
 
+ classement=classement %>%
+   mutate(nb_matchs_lag=nb_matchs+0)  
+ 
+classement_var_H= classement %>%
+  dplyr::select(Team,
+         Date,
+           buts_marq_match,
+           buts_marq_match_H,
+           buts_enc_match,
+           buts_enc_match_H,
+           points_marq_match,
+           points_marq_match_H,
+           buts_match,
+           buts_match_H,
+           part_nb_0p5_buts,
+           part_nb_1p5_buts,
+           part_nb_2p5_buts,
+           part_nb_3p5_buts,
+           part_nb_4p5_buts,
+           part_nb_0p5_buts_marq,
+           part_nb_1p5_buts_marq,
+           part_nb_2p5_buts_marq,
+           part_nb_3p5_buts_marq,
+           part_nb_4p5_buts_marq,
+           part_nb_0p5_buts_enc,
+           part_nb_1p5_buts_enc,
+           part_nb_2p5_buts_enc,
+           part_nb_3p5_buts_enc,
+           part_nb_4p5_buts_enc,
+           part_marge_buts_0,
+      part_marge_buts_0,
+      part_marge_buts_plus_1,
+      part_marge_buts_plus_2,
+      part_marge_buts_plus_3,
+      part_marge_buts_plus_4,
+      part_marge_buts_moins_1,
+      part_marge_buts_moins_2,
+      part_marge_buts_moins_3,
+      part_marge_buts_moins_4,
+      part_marge_buts_ecart_1,
+      part_marge_buts_ecart_2,
+      part_marge_buts_ecart_3,
+      part_marge_buts_ecart_4,
+      part_marge_buts_0_H,
+      part_marge_buts_plus_1_H,
+      part_marge_buts_plus_2_H,
+      part_marge_buts_plus_3_H,
+      part_marge_buts_plus_4_H,
+      part_marge_buts_moins_1_H,
+      part_marge_buts_moins_2_H,
+      part_marge_buts_moins_3_H,
+      part_marge_buts_moins_4_H,
+      part_marge_buts_ecart_1_H,
+      part_marge_buts_ecart_2_H,
+      part_marge_buts_ecart_3_H,
+      part_marge_buts_ecart_4_H
+  ) %>%
+  distinct(Team,
+         Date,
+           buts_marq_match,
+           buts_marq_match_H,
+           buts_enc_match,
+           buts_enc_match_H,
+           points_marq_match,
+           points_marq_match_H,
+           buts_match,
+           buts_match_H,
+           part_nb_0p5_buts,
+           part_nb_1p5_buts,
+           part_nb_2p5_buts,
+           part_nb_3p5_buts,
+           part_nb_4p5_buts,
+           part_nb_0p5_buts_marq,
+           part_nb_1p5_buts_marq,
+           part_nb_2p5_buts_marq,
+           part_nb_3p5_buts_marq,
+           part_nb_4p5_buts_marq,
+           part_nb_0p5_buts_enc,
+           part_nb_1p5_buts_enc,
+           part_nb_2p5_buts_enc,
+           part_nb_3p5_buts_enc,
+           part_nb_4p5_buts_enc,
+           part_marge_buts_0,
+      part_marge_buts_0,
+      part_marge_buts_plus_1,
+      part_marge_buts_plus_2,
+      part_marge_buts_plus_3,
+      part_marge_buts_plus_4,
+      part_marge_buts_moins_1,
+      part_marge_buts_moins_2,
+      part_marge_buts_moins_3,
+      part_marge_buts_moins_4,
+      part_marge_buts_ecart_1,
+      part_marge_buts_ecart_2,
+      part_marge_buts_ecart_3,
+      part_marge_buts_ecart_4,
+      part_marge_buts_0_H,
+      part_marge_buts_plus_1_H,
+      part_marge_buts_plus_2_H,
+      part_marge_buts_plus_3_H,
+      part_marge_buts_plus_4_H,
+      part_marge_buts_moins_1_H,
+      part_marge_buts_moins_2_H,
+      part_marge_buts_moins_3_H,
+      part_marge_buts_moins_4_H,
+      part_marge_buts_ecart_1_H,
+      part_marge_buts_ecart_2_H,
+      part_marge_buts_ecart_3_H,
+      part_marge_buts_ecart_4_H)
+  classement_var_A= classement %>%
+  dplyr::select(Team,
+         Date,
+           buts_marq_match,
+           buts_marq_match_A,
+           buts_enc_match,
+           buts_enc_match_A,
+           points_marq_match,
+           points_marq_match_A,
+           buts_match,
+           buts_match_A,
+           part_nb_0p5_buts,
+           part_nb_1p5_buts,
+           part_nb_2p5_buts,
+           part_nb_3p5_buts,
+           part_nb_4p5_buts,
+           part_nb_0p5_buts_marq,
+           part_nb_1p5_buts_marq,
+           part_nb_2p5_buts_marq,
+           part_nb_3p5_buts_marq,
+           part_nb_4p5_buts_marq,
+           part_nb_0p5_buts_enc,
+           part_nb_1p5_buts_enc,
+           part_nb_2p5_buts_enc,
+           part_nb_3p5_buts_enc,
+           part_nb_4p5_buts_enc,
+           part_marge_buts_0,
+      part_marge_buts_0,
+      part_marge_buts_plus_1,
+      part_marge_buts_plus_2,
+      part_marge_buts_plus_3,
+      part_marge_buts_plus_4,
+      part_marge_buts_moins_1,
+      part_marge_buts_moins_2,
+      part_marge_buts_moins_3,
+      part_marge_buts_moins_4,
+      part_marge_buts_ecart_1,
+      part_marge_buts_ecart_2,
+      part_marge_buts_ecart_3,
+      part_marge_buts_ecart_4,
+      part_marge_buts_0_A,
+      part_marge_buts_plus_1_A,
+      part_marge_buts_plus_2_A,
+      part_marge_buts_plus_3_A,
+      part_marge_buts_plus_4_A,
+      part_marge_buts_moins_1_A,
+      part_marge_buts_moins_2_A,
+      part_marge_buts_moins_3_A,
+      part_marge_buts_moins_4_A,
+      part_marge_buts_ecart_1_A,
+      part_marge_buts_ecart_2_A,
+      part_marge_buts_ecart_3_A,
+      part_marge_buts_ecart_4_A) %>%
+
+  distinct(Team,
+         Date,
+           buts_marq_match,
+           buts_marq_match_A,
+           buts_enc_match,
+           buts_enc_match_A,
+           points_marq_match,
+           points_marq_match_A,
+           buts_match,
+           buts_match_A,
+           part_nb_0p5_buts,
+           part_nb_1p5_buts,
+           part_nb_2p5_buts,
+           part_nb_3p5_buts,
+           part_nb_4p5_buts,
+           part_nb_0p5_buts_marq,
+           part_nb_1p5_buts_marq,
+           part_nb_2p5_buts_marq,
+           part_nb_3p5_buts_marq,
+           part_nb_4p5_buts_marq,
+           part_nb_0p5_buts_enc,
+           part_nb_1p5_buts_enc,
+           part_nb_2p5_buts_enc,
+           part_nb_3p5_buts_enc,
+           part_nb_4p5_buts_enc,
+           part_marge_buts_0,
+      part_marge_buts_0,
+      part_marge_buts_plus_1,
+      part_marge_buts_plus_2,
+      part_marge_buts_plus_3,
+      part_marge_buts_plus_4,
+      part_marge_buts_moins_1,
+      part_marge_buts_moins_2,
+      part_marge_buts_moins_3,
+      part_marge_buts_moins_4,
+      part_marge_buts_ecart_1,
+      part_marge_buts_ecart_2,
+      part_marge_buts_ecart_3,
+      part_marge_buts_ecart_4,
+      part_marge_buts_0_A,
+      part_marge_buts_plus_1_A,
+      part_marge_buts_plus_2_A,
+      part_marge_buts_plus_3_A,
+      part_marge_buts_plus_4_A,
+      part_marge_buts_moins_1_A,
+      part_marge_buts_moins_2_A,
+      part_marge_buts_moins_3_A,
+      part_marge_buts_moins_4_A,
+      part_marge_buts_ecart_1_A,
+      part_marge_buts_ecart_2_A,
+      part_marge_buts_ecart_3_A,
+      part_marge_buts_ecart_4_A
+  )
   
  
+```
+
+#Modélisation : But ou pas dans le match 
+```{r}
+#Prendre les équipes
+
+gg=as.data.frame(cbind(c('2019-03-31','2019-03-31','2019-03-31','2019-03-31','2019-03-31'),c('Toulouse','Reims','Montpellier','Nimes'),c('Paris SG','Lille','Guingamp','Rennes'),c(0,1,2,3),c(1,1,0,1),c(13,6,9,11),c(1,2,19,10),c(30,30,30,30)))
+names(gg)=c('Date','Team_home','Team_away','Final_H','Final_A','classement_H','classement_A','nb_matchs') 
+
+gg = gg %>%
+  mutate(Final_H=as.numeric(as.character(Final_H)),
+         Final_A=as.numeric(as.character(Final_A)),
+         classement_A=as.numeric(as.character(classement_A)),
+         classement_H=as.numeric(as.character(classement_H)),
+         nb_matchs=as.numeric(as.character(nb_matchs)),
+         Date=as.Date(Date,format='%Y-%m-%d'))
  
+gg= gg %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_A<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date"))
+
+gg[,c(4:109)] <- lapply(gg[,c(4:109)], function(x) as.numeric(as.character(x)))
+summary(gg)
+#Bon modèle
+
+  jojo= rbind(test,gg)
+bon_model_gg <- as.data.frame(predict(respls, newdata = jojo, type = "response",ncomp=12))  
+ names(bon_model_gg) ="pdata"
+  
+
+nogoal_pred_bon_model=cbind(jojo,bon_model_gg) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+nogoal=score_france_ %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_A<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date"))
+
+  
+  
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+#sample <- sample.int(n = nrow(nogoal), size = floor(.75*nrow(nogoal)), replace = F)
+train <- nogoal[46:245, ]
+test  <- nogoal[1:45, ]
+
+nogoal_train= train %>%
+dplyr::select(-c(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs))
+
+
  
+  #PLS regression
+
+  respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=30)
+  # summary(respls)
+  # plot(RMSEP(respls), legendpos = "topright")
+  # 
+  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
+  
+  tx_global=NULL
+  for ( i in 2:30) {
+    
+  pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=i))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+  pdata=rbind(pdata_test,pdata_train)
+  baso=rbind(test,train)
+nogoal_pred=cbind(baso,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+ res_pred = nogoal_pred %>%
+   group_by(ech,unique_teamgoal,pred) %>%
+   summarise(n=n()) %>%
+   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
+   ungroup() %>%
+   dplyr::select(ech,confusion,n) %>%
+   group_by(ech,confusion) %>%
+   summarise(tot=sum(n)) %>%
+   ungroup() %>%
+   group_by(ech) %>%
+   mutate(pct=(100*tot)/sum(tot)) %>%
+   filter(confusion=='bon') %>%
+   mutate(comp=i)
+ 
+   
+    
+  
+  tx_global=rbind(tx_global,res_pred)
+  }
+  
+  #Bon modèle
+ pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=13))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=13))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+bon_model=rbind(pdata_test,pdata_train)
+baso=rbind(test,train)
+
+nogoal_pred_bon_model=cbind(baso,bon_model) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+check_test=nogoal_pred_bon_model %>%
+  slice(1:45)
+```
+
+#Regression logistique
+```{r}
+# attach(nogoal_mod)
+# nogoal$unique_teamgoal=as.factor(nogoal$unique_teamgoal)
+res_glm=glm( unique_teamgoal~., family=binomial(link=logit),data=nogoal_train)
+#summary(res_glm)
+
+# Stepwise regression model
+step.model <- stepAIC(res_glm, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+
+
+# Use your model to make predictions, in this example newdata = training set, but replace with your test set    
+pdata <- predict(step.model, newdata = test, type = "response")
+
+nogoal_pred=cbind(test,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+ 
+ res_pred=as.data.frame(table(nogoal_pred$unique_teamgoal,nogoal_pred$pred))
+ 
+ res_pred_bon= res_pred %>%
+   filter(Var1==Var2) %>%
+   summarise(bon=sum(Freq))
+ 
+  res_pred_mauvais= res_pred %>%
+   filter(Var1!=Var2) %>%
+   summarise(mauvais=sum(Freq))
+  
+  tx=cbind(res_pred_bon,res_pred_mauvais)
+  tx=tx %>%
+    mutate(tx=bon/(mauvais+bon))
 ```
 
