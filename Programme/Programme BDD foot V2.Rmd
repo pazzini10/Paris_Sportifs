@@ -198,7 +198,7 @@ face_a_soccerstat1= face_a_soccerstat %>%
 # initialisaiton du data.frame de sortie
 fetch_l1_calendar=NULL
 
-for (saison in c(102:102)) {
+for (saison in c(100:102)) {
   #saison=20
   calendar=NULL
   
@@ -285,7 +285,7 @@ ref_saison = fetch_l1_calendar %>%
 #On joint et on remet les colonnes dans le bon ordre
 fetch_l1_calendar_final= fetch_l1_calendar %>%
   left_join(ref_saison,by="saison") %>%
-  dplyr::select(journee,date,time,home,score,away,home_score,away_score)
+  dplyr::select(saison,saison_annee,journee,date,time,home,score,away,home_score,away_score)
 
 # #On sauvegarde les fichiers
 # save(fetch_l1_calendar_final,file="/home/ldapusers/dflouriot/Analyse/Crawl_foot/Extraction_calendrier_L1.RData")
@@ -318,7 +318,7 @@ fetch_l1_calendar_final_=fetch_l1_calendar_final %>%
          Final_H=home_score,
          Final_A=away_score) %>%
   mutate(Final_R=ifelse(Final_H>Final_A,'H',ifelse(Final_H<Final_A,'A','D'))) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_R,Final_H,Final_A)
+  dplyr::select(saison,saison_annee,Date,Team_home,Team_away,Final_R,Final_H,Final_A)
  
 ```
 
@@ -364,31 +364,38 @@ score_france= score %>%
 baso=fetch_l1_calendar_final_
 
 classement_home = baso %>%
-  dplyr::select(Date,Team_home,Final_R ) %>%
+  dplyr::select(saison,Date,Team_home,Final_R ) %>%
   mutate(points=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
          nb_matchs=ifelse(is.na(Final_R)==F,1,0)) %>%
   rename(Team=Team_home) %>%
-  dplyr::select(Date,Team,points,nb_matchs)
+  dplyr::select(saison,Date,Team,points,nb_matchs)
 
 classement_away = baso %>%
-  dplyr::select(Date,Team_away,Final_R ) %>%
+  dplyr::select(saison,Date,Team_away,Final_R ) %>%
   mutate(points=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
          nb_matchs=ifelse(is.na(Final_R)==F,1,0)) %>%
   rename(Team=Team_away) %>%
-  dplyr::select(Date,Team,points,nb_matchs)
+  dplyr::select(saison,Date,Team,points,nb_matchs)
 
 classement_ens = rbind(classement_away,classement_home) %>%
   arrange(Date)
 
-date_vector=unique(classement_ens$Date)
-
 classement_team=NULL
+for (s in unique(classement_ens$saison)) {
+  
+ 
+
+date_vector=classement_ens%>% filter(saison==s) %>% distinct(Date)
+date_vector=unique(date_vector$Date)
+
 
  
 for (i in date_vector) {
-  #i='2019-03-31'
+  
+
+  #i='2017-05-20'
   class_tempo=classement_ens %>%
-    filter(Date<=i) %>%
+    filter(Date<=i & saison==s) %>%
     #select(Team,points) %>%
     group_by(Team) %>%
     summarise(
@@ -397,18 +404,19 @@ for (i in date_vector) {
        
     arrange(desc(points)) %>%
     ungroup() %>%
-    mutate(Date=as.Date(i,origin="1970-01-01"),classement=row_number()) %>%
-    dplyr::select(Team,classement,Date,nb_matchs)
+    mutate(Date=as.Date(i,origin="1970-01-01"),classement=row_number(),saison=s) %>%
+    dplyr::select(saison,Team,classement,Date,nb_matchs)
   
+
+  classement_team=rbind(classement_team,class_tempo)
   
-  classement_team=rbind(classement_team,class_tempo) 
 }
 
- 
+}
 score_france_= baso %>%
-  left_join(classement_team,by=c("Team_home"="Team","Date","Date")) %>%
+  left_join(classement_team,by=c("Team_home"="Team","Date"="Date","saison"="saison")) %>%
   rename(classement_H=classement) %>%
-  left_join(classement_team[,1:3],by=c("Team_away"="Team","Date","Date")) %>%
+  left_join(classement_team[,1:4],by=c("Team_away"="Team","Date"="Date","saison"="saison")) %>%
   rename(classement_A=classement) 
  
 ```
@@ -420,7 +428,7 @@ score_france_= baso %>%
 
 #Classement chaque jour en live
 class_home = score_france_ %>%
-  dplyr::select(Date,Team_home,Final_R,Final_H,Final_A) %>%
+  dplyr::select(saison,Date,Team_home,Final_R,Final_H,Final_A) %>%
   mutate(
     points=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
          points_H=ifelse(Final_R=='H',3,ifelse(Final_R=='A',0,ifelse(Final_R=='D',1,0))),
@@ -531,10 +539,10 @@ class_home = score_france_ %>%
          ) %>%
   rename(Team=Team_home,buts_marq=Final_H,buts_enc=Final_A
         ) %>%
-dplyr::select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,nb_0p5_buts_H,nb_1p5_buts_H,nb_2p5_buts_H,nb_3p5_buts_H,nb_4p5_buts_H,nb_0p5_buts_marq_H,nb_1p5_buts_marq_H,nb_2p5_buts_marq_H,nb_3p5_buts_marq_H,nb_4p5_buts_marq_H,nb_0p5_buts_enc_H,nb_1p5_buts_enc_H,nb_2p5_buts_enc_H,nb_3p5_buts_enc_H,nb_4p5_buts_enc_H,nb_0p5_buts_A,nb_1p5_buts_A,nb_2p5_buts_A,nb_3p5_buts_A,nb_4p5_buts_A,nb_0p5_buts_marq_A,nb_1p5_buts_marq_A,nb_2p5_buts_marq_A,nb_3p5_buts_marq_A,nb_4p5_buts_marq_A,nb_0p5_buts_enc_A,nb_1p5_buts_enc_A,nb_2p5_buts_enc_A,nb_3p5_buts_enc_A,nb_4p5_buts_enc_A,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
+dplyr::select(saison,Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,nb_0p5_buts_H,nb_1p5_buts_H,nb_2p5_buts_H,nb_3p5_buts_H,nb_4p5_buts_H,nb_0p5_buts_marq_H,nb_1p5_buts_marq_H,nb_2p5_buts_marq_H,nb_3p5_buts_marq_H,nb_4p5_buts_marq_H,nb_0p5_buts_enc_H,nb_1p5_buts_enc_H,nb_2p5_buts_enc_H,nb_3p5_buts_enc_H,nb_4p5_buts_enc_H,nb_0p5_buts_A,nb_1p5_buts_A,nb_2p5_buts_A,nb_3p5_buts_A,nb_4p5_buts_A,nb_0p5_buts_marq_A,nb_1p5_buts_marq_A,nb_2p5_buts_marq_A,nb_3p5_buts_marq_A,nb_4p5_buts_marq_A,nb_0p5_buts_enc_A,nb_1p5_buts_enc_A,nb_2p5_buts_enc_A,nb_3p5_buts_enc_A,nb_4p5_buts_enc_A,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
 
 class_away = score_france_ %>%
-  dplyr::select(Date,Team_away,Final_R,Final_H,Final_A) %>%
+  dplyr::select(saison,Date,Team_away,Final_R,Final_H,Final_A) %>%
   mutate(points=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
          points_A=ifelse(Final_R=='A',3,ifelse(Final_R=='H',0,ifelse(Final_R=='D',1,0))),
          points_H=0,
@@ -641,7 +649,7 @@ class_away = score_france_ %>%
         clean_sheet_H=as.numeric(0)
          ) %>%
   rename(Team=Team_away,buts_marq=Final_A,buts_enc=Final_H)  %>%
-dplyr::select(Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,nb_0p5_buts_H,nb_1p5_buts_H,nb_2p5_buts_H,nb_3p5_buts_H,nb_4p5_buts_H,nb_0p5_buts_marq_H,nb_1p5_buts_marq_H,nb_2p5_buts_marq_H,nb_3p5_buts_marq_H,nb_4p5_buts_marq_H,nb_0p5_buts_enc_H,nb_1p5_buts_enc_H,nb_2p5_buts_enc_H,nb_3p5_buts_enc_H,nb_4p5_buts_enc_H,nb_0p5_buts_A,nb_1p5_buts_A,nb_2p5_buts_A,nb_3p5_buts_A,nb_4p5_buts_A,nb_0p5_buts_marq_A,nb_1p5_buts_marq_A,nb_2p5_buts_marq_A,nb_3p5_buts_marq_A,nb_4p5_buts_marq_A,nb_0p5_buts_enc_A,nb_1p5_buts_enc_A,nb_2p5_buts_enc_A,nb_3p5_buts_enc_A,nb_4p5_buts_enc_A,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
+dplyr::select(saison,Date,Team,nb_matchs_A,nb_matchs_H,points,points_A,points_H,nb_vict,nb_def,nb_nul,nb_vict_A,nb_def_A,nb_nul_A,nb_vict_H,nb_def_H,nb_nul_H,buts_marq,buts_marq_H,buts_marq_A,buts_enc,buts_enc_H,buts_enc_A,nb_0p5_buts,nb_1p5_buts,nb_2p5_buts,nb_3p5_buts,nb_4p5_buts,nb_0p5_buts_marq,nb_1p5_buts_marq,nb_2p5_buts_marq,nb_3p5_buts_marq,nb_4p5_buts_marq,nb_0p5_buts_enc,nb_1p5_buts_enc,nb_2p5_buts_enc,nb_3p5_buts_enc,nb_4p5_buts_enc,nb_0p5_buts_H,nb_1p5_buts_H,nb_2p5_buts_H,nb_3p5_buts_H,nb_4p5_buts_H,nb_0p5_buts_marq_H,nb_1p5_buts_marq_H,nb_2p5_buts_marq_H,nb_3p5_buts_marq_H,nb_4p5_buts_marq_H,nb_0p5_buts_enc_H,nb_1p5_buts_enc_H,nb_2p5_buts_enc_H,nb_3p5_buts_enc_H,nb_4p5_buts_enc_H,nb_0p5_buts_A,nb_1p5_buts_A,nb_2p5_buts_A,nb_3p5_buts_A,nb_4p5_buts_A,nb_0p5_buts_marq_A,nb_1p5_buts_marq_A,nb_2p5_buts_marq_A,nb_3p5_buts_marq_A,nb_4p5_buts_marq_A,nb_0p5_buts_enc_A,nb_1p5_buts_enc_A,nb_2p5_buts_enc_A,nb_3p5_buts_enc_A,nb_4p5_buts_enc_A,marge_buts_0,marge_buts_plus_1,marge_buts_plus_2,marge_buts_plus_3,marge_buts_plus_4,marge_buts_moins_1,marge_buts_moins_2,marge_buts_moins_3,marge_buts_moins_4,marge_buts_ecart_1,marge_buts_ecart_2,marge_buts_ecart_3,marge_buts_ecart_4,marge_buts_0_H,marge_buts_plus_1_H,marge_buts_plus_2_H,marge_buts_plus_3_H,marge_buts_plus_4_H,marge_buts_moins_1_H,marge_buts_moins_2_H,marge_buts_moins_3_H,marge_buts_moins_4_H,marge_buts_ecart_1_H,marge_buts_ecart_2_H,marge_buts_ecart_3_H,marge_buts_ecart_4_H,marge_buts_0_A,marge_buts_plus_1_A,marge_buts_plus_2_A,marge_buts_plus_3_A,marge_buts_plus_4_A,marge_buts_moins_1_A,marge_buts_moins_2_A,marge_buts_moins_3_A,marge_buts_moins_4_A,marge_buts_ecart_1_A,marge_buts_ecart_2_A,marge_buts_ecart_3_A,marge_buts_ecart_4_A,une_seule_equipe_marq,deux_equipes_marq,clean_sheet,clean_sheet_H,clean_sheet_A)
 
 class_ens = rbind(class_away,class_home) %>%
   arrange(Date)
@@ -650,10 +658,18 @@ date_vect=unique(class_ens$Date)
   
 
 classement=NULL
+
+for (s in unique(classement_ens$saison)) {
+  
+ 
+
+date_vect=classement_ens%>% filter(saison==s) %>% distinct(Date)
+date_vect=unique(date_vect$Date)
+
 for (i in date_vect[-c(1:6)]) {
   #i='2019-03-31'
   class_temp=class_ens %>%
-    filter(Date<i) %>%
+    filter(Date<i & saison==s) %>%
     #select(Team,points) %>%
     group_by(Team) %>%
     summarise(
@@ -770,7 +786,7 @@ for (i in date_vect[-c(1:6)]) {
       
       ) %>%
     arrange(desc(points)) %>%
-    mutate(Date=as.Date(i,origin="1970-01-01"),
+    mutate(saison=s,Date=as.Date(i,origin="1970-01-01"),
            diff_buts=buts_marq-buts_enc,
            buts_marq_match=buts_marq/nb_matchs,
            buts_marq_match_H=buts_marq_H/nb_matchs_H,
@@ -881,6 +897,7 @@ for (i in date_vect[-c(1:6)]) {
   
   
   classement=rbind(classement,class_temp) 
+}
 }
 
   
@@ -1118,179 +1135,165 @@ for (i in date_vect[-c(1:6)]) {
 #  
 #   
   
-classement_var_H= classement %>%
-  dplyr::select(Team,
-         Date,
-          buts_marq_match_H,
-           buts_enc_match_H,
-           points_marq_match_H,
-      part_marge_buts_0_H,
-      part_marge_buts_plus_1_H,
-      part_marge_buts_plus_2_H,
-      part_marge_buts_plus_3_H,
-      part_marge_buts_plus_4_H,
-      part_marge_buts_moins_1_H,
-      part_marge_buts_moins_2_H,
-      part_marge_buts_moins_3_H,
-      part_marge_buts_moins_4_H,
-      part_marge_buts_ecart_1_H,
-      part_marge_buts_ecart_2_H,
-      part_marge_buts_ecart_3_H,
-      part_marge_buts_ecart_4_H,
-      part_clean_sheet_H,
-           part_nb_0p5_buts_H,
-           part_nb_1p5_buts_H,
-           part_nb_2p5_buts_H,
-           part_nb_3p5_buts_H,
-           part_nb_4p5_buts_H,
-           part_nb_0p5_buts_marq_H,
-           part_nb_1p5_buts_marq_H,
-           part_nb_2p5_buts_marq_H,
-           part_nb_3p5_buts_marq_H,
-           part_nb_4p5_buts_marq_H,
-           part_nb_0p5_buts_enc_H,
-           part_nb_1p5_buts_enc_H,
-           part_nb_2p5_buts_enc_H,
-           part_nb_3p5_buts_enc_H,
-           part_nb_4p5_buts_enc_H
-  ) %>%
-  distinct(Team,Date,
-                 buts_marq_match_H,
-           buts_enc_match_H,
-           points_marq_match_H,
-      part_marge_buts_0_H,
-      part_marge_buts_plus_1_H,
-      part_marge_buts_plus_2_H,
-      part_marge_buts_plus_3_H,
-      part_marge_buts_plus_4_H,
-      part_marge_buts_moins_1_H,
-      part_marge_buts_moins_2_H,
-      part_marge_buts_moins_3_H,
-      part_marge_buts_moins_4_H,
-      part_marge_buts_ecart_1_H,
-      part_marge_buts_ecart_2_H,
-      part_marge_buts_ecart_3_H,
-      part_marge_buts_ecart_4_H,
-      part_clean_sheet_H,
-         part_nb_0p5_buts_H,
-           part_nb_1p5_buts_H,
-           part_nb_2p5_buts_H,
-           part_nb_3p5_buts_H,
-           part_nb_4p5_buts_H,
-           part_nb_0p5_buts_marq_H,
-           part_nb_1p5_buts_marq_H,
-           part_nb_2p5_buts_marq_H,
-           part_nb_3p5_buts_marq_H,
-           part_nb_4p5_buts_marq_H,
-           part_nb_0p5_buts_enc_H,
-           part_nb_1p5_buts_enc_H,
-           part_nb_2p5_buts_enc_H,
-           part_nb_3p5_buts_enc_H,
-           part_nb_4p5_buts_enc_H)
-  classement_var_A= classement %>%
-  dplyr::select(Team,
-         Date,
-           buts_marq_match_A,
-           buts_enc_match_A,
-           points_marq_match_A,
-      part_marge_buts_0_A,
-      part_marge_buts_plus_1_A,
-      part_marge_buts_plus_2_A,
-      part_marge_buts_plus_3_A,
-      part_marge_buts_plus_4_A,
-      part_marge_buts_moins_1_A,
-      part_marge_buts_moins_2_A,
-      part_marge_buts_moins_3_A,
-      part_marge_buts_moins_4_A,
-      part_marge_buts_ecart_1_A,
-      part_marge_buts_ecart_2_A,
-      part_marge_buts_ecart_3_A,
-      part_marge_buts_ecart_4_A,
-      part_clean_sheet_A,
-         part_nb_0p5_buts_A,
-           part_nb_1p5_buts_A,
-           part_nb_2p5_buts_A,
-           part_nb_3p5_buts_A,
-           part_nb_4p5_buts_A,
-           part_nb_0p5_buts_marq_A,
-           part_nb_1p5_buts_marq_A,
-           part_nb_2p5_buts_marq_A,
-           part_nb_3p5_buts_marq_A,
-           part_nb_4p5_buts_marq_A,
-           part_nb_0p5_buts_enc_A,
-           part_nb_1p5_buts_enc_A,
-           part_nb_2p5_buts_enc_A,
-           part_nb_3p5_buts_enc_A,
-           part_nb_4p5_buts_enc_A) %>%
-
-  distinct(Team,
-         Date,
-           buts_marq_match_A,
-           buts_enc_match_A,
-           points_marq_match_A,
-      part_marge_buts_0_A,
-      part_marge_buts_plus_1_A,
-      part_marge_buts_plus_2_A,
-      part_marge_buts_plus_3_A,
-      part_marge_buts_plus_4_A,
-      part_marge_buts_moins_1_A,
-      part_marge_buts_moins_2_A,
-      part_marge_buts_moins_3_A,
-      part_marge_buts_moins_4_A,
-      part_marge_buts_ecart_1_A,
-      part_marge_buts_ecart_2_A,
-      part_marge_buts_ecart_3_A,
-      part_marge_buts_ecart_4_A,
-      part_clean_sheet_A,
-         part_nb_0p5_buts_A,
-           part_nb_1p5_buts_A,
-           part_nb_2p5_buts_A,
-           part_nb_3p5_buts_A,
-           part_nb_4p5_buts_A,
-           part_nb_0p5_buts_marq_A,
-           part_nb_1p5_buts_marq_A,
-           part_nb_2p5_buts_marq_A,
-           part_nb_3p5_buts_marq_A,
-           part_nb_4p5_buts_marq_A,
-           part_nb_0p5_buts_enc_A,
-           part_nb_1p5_buts_enc_A,
-           part_nb_2p5_buts_enc_A,
-           part_nb_3p5_buts_enc_A,
-           part_nb_4p5_buts_enc_A
-  )
-    
+# classement_var_H= classement %>%
+#   dplyr::select(Team,
+#          Date,
+#           buts_marq_match_H,
+#            buts_enc_match_H,
+#            points_marq_match_H,
+#       part_marge_buts_0_H,
+#       part_marge_buts_plus_1_H,
+#       part_marge_buts_plus_2_H,
+#       part_marge_buts_plus_3_H,
+#       part_marge_buts_plus_4_H,
+#       part_marge_buts_moins_1_H,
+#       part_marge_buts_moins_2_H,
+#       part_marge_buts_moins_3_H,
+#       part_marge_buts_moins_4_H,
+#       part_marge_buts_ecart_1_H,
+#       part_marge_buts_ecart_2_H,
+#       part_marge_buts_ecart_3_H,
+#       part_marge_buts_ecart_4_H,
+#       part_clean_sheet_H,
+#            part_nb_0p5_buts_H,
+#            part_nb_1p5_buts_H,
+#            part_nb_2p5_buts_H,
+#            part_nb_3p5_buts_H,
+#            part_nb_4p5_buts_H,
+#            part_nb_0p5_buts_marq_H,
+#            part_nb_1p5_buts_marq_H,
+#            part_nb_2p5_buts_marq_H,
+#            part_nb_3p5_buts_marq_H,
+#            part_nb_4p5_buts_marq_H,
+#            part_nb_0p5_buts_enc_H,
+#            part_nb_1p5_buts_enc_H,
+#            part_nb_2p5_buts_enc_H,
+#            part_nb_3p5_buts_enc_H,
+#            part_nb_4p5_buts_enc_H
+#   ) %>%
+#   distinct(Team,Date,
+#                  buts_marq_match_H,
+#            buts_enc_match_H,
+#            points_marq_match_H,
+#       part_marge_buts_0_H,
+#       part_marge_buts_plus_1_H,
+#       part_marge_buts_plus_2_H,
+#       part_marge_buts_plus_3_H,
+#       part_marge_buts_plus_4_H,
+#       part_marge_buts_moins_1_H,
+#       part_marge_buts_moins_2_H,
+#       part_marge_buts_moins_3_H,
+#       part_marge_buts_moins_4_H,
+#       part_marge_buts_ecart_1_H,
+#       part_marge_buts_ecart_2_H,
+#       part_marge_buts_ecart_3_H,
+#       part_marge_buts_ecart_4_H,
+#       part_clean_sheet_H,
+#          part_nb_0p5_buts_H,
+#            part_nb_1p5_buts_H,
+#            part_nb_2p5_buts_H,
+#            part_nb_3p5_buts_H,
+#            part_nb_4p5_buts_H,
+#            part_nb_0p5_buts_marq_H,
+#            part_nb_1p5_buts_marq_H,
+#            part_nb_2p5_buts_marq_H,
+#            part_nb_3p5_buts_marq_H,
+#            part_nb_4p5_buts_marq_H,
+#            part_nb_0p5_buts_enc_H,
+#            part_nb_1p5_buts_enc_H,
+#            part_nb_2p5_buts_enc_H,
+#            part_nb_3p5_buts_enc_H,
+#            part_nb_4p5_buts_enc_H)
+#   classement_var_A= classement %>%
+#   dplyr::select(Team,
+#          Date,
+#            buts_marq_match_A,
+#            buts_enc_match_A,
+#            points_marq_match_A,
+#       part_marge_buts_0_A,
+#       part_marge_buts_plus_1_A,
+#       part_marge_buts_plus_2_A,
+#       part_marge_buts_plus_3_A,
+#       part_marge_buts_plus_4_A,
+#       part_marge_buts_moins_1_A,
+#       part_marge_buts_moins_2_A,
+#       part_marge_buts_moins_3_A,
+#       part_marge_buts_moins_4_A,
+#       part_marge_buts_ecart_1_A,
+#       part_marge_buts_ecart_2_A,
+#       part_marge_buts_ecart_3_A,
+#       part_marge_buts_ecart_4_A,
+#       part_clean_sheet_A,
+#          part_nb_0p5_buts_A,
+#            part_nb_1p5_buts_A,
+#            part_nb_2p5_buts_A,
+#            part_nb_3p5_buts_A,
+#            part_nb_4p5_buts_A,
+#            part_nb_0p5_buts_marq_A,
+#            part_nb_1p5_buts_marq_A,
+#            part_nb_2p5_buts_marq_A,
+#            part_nb_3p5_buts_marq_A,
+#            part_nb_4p5_buts_marq_A,
+#            part_nb_0p5_buts_enc_A,
+#            part_nb_1p5_buts_enc_A,
+#            part_nb_2p5_buts_enc_A,
+#            part_nb_3p5_buts_enc_A,
+#            part_nb_4p5_buts_enc_A) %>%
+# 
+#   distinct(Team,
+#          Date,
+#            buts_marq_match_A,
+#            buts_enc_match_A,
+#            points_marq_match_A,
+#       part_marge_buts_0_A,
+#       part_marge_buts_plus_1_A,
+#       part_marge_buts_plus_2_A,
+#       part_marge_buts_plus_3_A,
+#       part_marge_buts_plus_4_A,
+#       part_marge_buts_moins_1_A,
+#       part_marge_buts_moins_2_A,
+#       part_marge_buts_moins_3_A,
+#       part_marge_buts_moins_4_A,
+#       part_marge_buts_ecart_1_A,
+#       part_marge_buts_ecart_2_A,
+#       part_marge_buts_ecart_3_A,
+#       part_marge_buts_ecart_4_A,
+#       part_clean_sheet_A,
+#          part_nb_0p5_buts_A,
+#            part_nb_1p5_buts_A,
+#            part_nb_2p5_buts_A,
+#            part_nb_3p5_buts_A,
+#            part_nb_4p5_buts_A,
+#            part_nb_0p5_buts_marq_A,
+#            part_nb_1p5_buts_marq_A,
+#            part_nb_2p5_buts_marq_A,
+#            part_nb_3p5_buts_marq_A,
+#            part_nb_4p5_buts_marq_A,
+#            part_nb_0p5_buts_enc_A,
+#            part_nb_1p5_buts_enc_A,
+#            part_nb_2p5_buts_enc_A,
+#            part_nb_3p5_buts_enc_A,
+#            part_nb_4p5_buts_enc_A
+#   )
+#     
 ```
 
 ```{r}
 classement_actu=classement
 classement_anc=classement %>%
-  mutate(nb_matchs=nb_matchs-8) %>%
+  mutate(nb_matchs=nb_matchs-8,nb_matchs_H=nb_matchs_H-4,nb_matchs_A=nb_matchs_A-4) %>%
   filter(nb_matchs>0)
 
-classement_temp=merge(classement_actu,classement_anc,by=c('Team','nb_matchs')) %>%
+classement_temp_tot=merge(classement_actu,classement_anc,by=c('Team','nb_matchs','saison')) %>%
   mutate(
     nb_matchs=nb_matchs+8,
-    nb_matchs_H_8d=nb_matchs_H.y-nb_matchs_H.x,
-    nb_matchs_A_8d=nb_matchs_A.y-nb_matchs_A.x,
     points_8d=points.y-points.x,
-    points_H_8d=points_H.y-points_H.x,
-    points_A_8d=points_A.y-points_A.x,
     nb_vict_8d=nb_vict.y-nb_vict.x,
     nb_def_8d=nb_def.y-nb_def.x,
     nb_nul_8d=nb_nul.y-nb_nul.x,
-    nb_vict_A_8d=nb_vict_A.y-nb_vict_A.x,
-    nb_def_A_8d=nb_def_A.y-nb_def_A.x,
-    nb_nul_A_8d=nb_nul_A.y-nb_nul_A.x,
-    nb_vict_H_8d=nb_vict_H.y-nb_vict_H.x,
-    nb_def_H_8d=nb_def_H.y-nb_def_H.x,
-    nb_nul_H_8d=nb_nul_H.y-nb_nul_H.x,
     buts_marq_8d=buts_marq.y-buts_marq.x,
     buts_enc_8d=buts_enc.y-buts_enc.x,
-    buts_marq_H_8d=buts_marq_H.y-buts_marq_H.x,
-    buts_marq_A_8d=buts_marq_A.y-buts_marq_A.x,
-    buts_enc_H_8d=buts_enc_H.y-buts_enc_H.x,
-    buts_enc_A_8d=buts_enc_A.y-buts_enc_A.x,
-nb_0p5_buts_8d=nb_0p5_buts.y-nb_0p5_buts.x,
+    nb_0p5_buts_8d=nb_0p5_buts.y-nb_0p5_buts.x,
 nb_1p5_buts_8d=nb_1p5_buts.y-nb_1p5_buts.x,
 nb_2p5_buts_8d=nb_2p5_buts.y-nb_2p5_buts.x,
 nb_3p5_buts_8d=nb_3p5_buts.y-nb_3p5_buts.x,
@@ -1304,7 +1307,20 @@ nb_0p5_buts_enc_8d=nb_0p5_buts_enc.y-nb_0p5_buts_enc.x,
 nb_1p5_buts_enc_8d=nb_1p5_buts_enc.y-nb_1p5_buts_enc.x,
 nb_2p5_buts_enc_8d=nb_2p5_buts_enc.y-nb_2p5_buts_enc.x,
 nb_3p5_buts_enc_8d=nb_3p5_buts_enc.y-nb_3p5_buts_enc.x,
-nb_4p5_buts_enc_8d=nb_4p5_buts_enc.y-nb_4p5_buts_enc.x,
+nb_4p5_buts_enc_8d=nb_4p5_buts_enc.y-nb_4p5_buts_enc.x
+  ) %>%
+  dplyr::select(Team,saison,nb_matchs,ends_with("8d")) %>%
+  unique()
+
+classement_temp_H=merge(classement_actu,classement_anc,by=c('Team','nb_matchs_H','saison')) %>%
+  mutate(
+    nb_matchs=nb_matchs.x+8,
+    points_H_8d=points_H.y-points_H.x,
+    nb_vict_H_8d=nb_vict_H.y-nb_vict_H.x,
+    nb_def_H_8d=nb_def_H.y-nb_def_H.x,
+    nb_nul_H_8d=nb_nul_H.y-nb_nul_H.x,
+  buts_marq_H_8d=buts_marq_H.y-buts_marq_H.x,
+    buts_enc_H_8d=buts_enc_H.y-buts_enc_H.x,
 nb_0p5_buts_H_8d=nb_0p5_buts_H.y-nb_0p5_buts_H.x,
 nb_1p5_buts_H_8d=nb_1p5_buts_H.y-nb_1p5_buts_H.x,
 nb_2p5_buts_H_8d=nb_2p5_buts_H.y-nb_2p5_buts_H.x,
@@ -1319,7 +1335,20 @@ nb_0p5_buts_enc_H_8d=nb_0p5_buts_enc_H.y-nb_0p5_buts_enc_H.x,
 nb_1p5_buts_enc_H_8d=nb_1p5_buts_enc_H.y-nb_1p5_buts_enc_H.x,
 nb_2p5_buts_enc_H_8d=nb_2p5_buts_enc_H.y-nb_2p5_buts_enc_H.x,
 nb_3p5_buts_enc_H_8d=nb_3p5_buts_enc_H.y-nb_3p5_buts_enc_H.x,
-nb_4p5_buts_enc_H_8d=nb_4p5_buts_enc_H.y-nb_4p5_buts_enc_H.x,
+nb_4p5_buts_enc_H_8d=nb_4p5_buts_enc_H.y-nb_4p5_buts_enc_H.x
+  ) %>%
+  dplyr::select(Team,saison,nb_matchs,ends_with("8d")) %>%
+  unique()
+
+classement_temp_A=merge(classement_actu,classement_anc,by=c('Team','nb_matchs_A','saison')) %>%
+  mutate(
+    nb_matchs=nb_matchs.x+8,
+    points_A_8d=points_A.y-points_A.x,
+    nb_vict_A_8d=nb_vict_A.y-nb_vict_A.x,
+    nb_def_A_8d=nb_def_A.y-nb_def_A.x,
+    nb_nul_A_8d=nb_nul_A.y-nb_nul_A.x,
+    buts_marq_A_8d=buts_marq_A.y-buts_marq_A.x,
+    buts_enc_A_8d=buts_enc_A.y-buts_enc_A.x,
 nb_0p5_buts_A_8d=nb_0p5_buts_A.y-nb_0p5_buts_A.x,
 nb_1p5_buts_A_8d=nb_1p5_buts_A.y-nb_1p5_buts_A.x,
 nb_2p5_buts_A_8d=nb_2p5_buts_A.y-nb_2p5_buts_A.x,
@@ -1335,347 +1364,31 @@ nb_1p5_buts_enc_A_8d=nb_1p5_buts_enc_A.y-nb_1p5_buts_enc_A.x,
 nb_2p5_buts_enc_A_8d=nb_2p5_buts_enc_A.y-nb_2p5_buts_enc_A.x,
 nb_3p5_buts_enc_A_8d=nb_3p5_buts_enc_A.y-nb_3p5_buts_enc_A.x,
 nb_4p5_buts_enc_A_8d=nb_4p5_buts_enc_A.y-nb_4p5_buts_enc_A.x
-
- 
   ) %>%
-  dplyr::select(Team,nb_matchs,ends_with("8d")) %>%
-  unique()
+  dplyr::select(Team,saison,nb_matchs,ends_with("8d")) %>%
+  unique()    
+
+    
+  
+    
+  
+ 
+
 
 #str(classement_temp)
 ```
 
-#Modélisation : But ou pas dans le match avec des pcts
-```{r}
-
-
-nogoal=score_france_ %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
-  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
-  pos_class_team_A=ifelse(classement_A<=5,1,
-                      ifelse(classement_A<=10 & classement_A>=6,2,
-                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
-pos_class_team_H=ifelse(classement_H<=5,1,
-                      ifelse(classement_H<=10 & classement_H>=6,2,
-                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
-  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
-  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
-  arrange(desc(Date))
-
-  
-  
-#set.seed(101) # Set Seed so that same sample can be reproduced in future also
-# Now Selecting 75% of data as sample from total 'n' rows of the data  
-nogoal_sans_val=nogoal[-c(1:71,300:380), ]
-sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
-train <- nogoal_sans_val[sample, ]
-test  <- nogoal_sans_val[-sample, ]
-test=rbind(test,nogoal[c(1:71), ])
-nogoal_train= train %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
-nogoal_test= test %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
-summary(nogoal_train)
- 
-  #PLS regression
-
-  respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
-  # summary(respls)
-  # plot(RMSEP(respls), legendpos = "topright")
-  # 
-  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
-  
-  tx_global=NULL
-  for ( i in 2:40) {
-    
-  pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=i))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-  
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-  pdata=rbind(pdata_test,pdata_train)
-  baso=rbind(test,train)
-nogoal_pred=cbind(baso,pdata) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
- res_pred = nogoal_pred %>%
-   filter(unique_teamgoal>=0) %>%
-   group_by(ech,unique_teamgoal,pred) %>%
-   summarise(n=n()) %>%
-   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
-   ungroup() %>%
-   dplyr::select(ech,confusion,n) %>%
-   group_by(ech,confusion) %>%
-   summarise(tot=sum(n)) %>%
-   ungroup() %>%
-   group_by(ech) %>%
-   mutate(pct=(100*tot)/sum(tot)) %>%
-   filter(confusion=='bon') %>%
-   mutate(comp=i)
- 
-   
-    
-  
-  tx_global=rbind(tx_global,res_pred)
-  }
-  
-  #Bon modèle
- pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-bon_model=rbind(pdata_test,pdata_train)
-baso=rbind(test,train)
-
-nogoal_pred_bon_model=cbind(baso,bon_model) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
-check_test=nogoal_pred_bon_model %>%
-  slice(1:117)
-
-table(check_test$pred,check_test$unique_teamgoal)
-
-#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
-#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
-
-#Validation croisée
-
-#rescv <- crossval(respls)
- 
-
-gas2.cv <- crossval(respls, segments = 10)
- 
-plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-summary(gas2.cv, what = "validation")
-MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
-# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-# summary(respls, what = "validation")
-   
-```
-
-
-#Modélisation analyse discriminantes PLS-DA (variable quali)
-
-```{r}
-
-
-
-
-nogoal=score_france_ %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
-  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,'1','0'),
-  pos_class_team_A=ifelse(classement_A<=5,1,
-                      ifelse(classement_A<=10 & classement_A>=6,2,
-                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
-pos_class_team_H=ifelse(classement_H<=5,1,
-                      ifelse(classement_H<=10 & classement_H>=6,2,
-                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
-  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
-  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
-  arrange(desc(Date))
-
-  
-  
-#set.seed(101) # Set Seed so that same sample can be reproduced in future also
-# Now Selecting 75% of data as sample from total 'n' rows of the data  
-nogoal_sans_val=nogoal[-c(1:71,300:380), ]
-sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
-train <- nogoal_sans_val[sample, ]
-test  <- nogoal_sans_val[-sample, ]
-test=rbind(test,nogoal[c(1:71), ])
-nogoal_train= train %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
-nogoal_test= test %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
- 
- install.packages("devtools")
-# then load
-library(devtools)
-install_github("mixOmicsTeam/mixOmics")
-  #PLS regression
-library(mixOmics)
-
-X <- as.matrix(nogoal_train[,-1])
-Y <- as.factor(nogoal_train[,1])
-Xtest <- as.matrix(nogoal_test[,-1])
-Ytest <- as.factor(nogoal_test[,1])  
-
-## PLS-DA function
-plsda.res <- plsda(X, Y, ncomp = 10)
-  
- 
-set.seed(2543) # for reproducibility here, only when the `cpus' argument is not used
-perf.plsda <- perf(plsda.res, validation = "Mfold", folds = 4, 
-                  progressBar = FALSE, auc = TRUE, nrepeat = 5) 
-
-summary(perf.plsda)
-
-perf.plsda$error.rate
-# perf.plsda.srbct$error.rate  # error rates
-plot(perf.plsda$error.rate, col = color.mixo(1:3), sd = TRUE, legend.position = "horizontal")
-
-
-list.keepX <- c(seq(10, 50, 10))
-set.seed(2543) # for reproducibility here,
-# to speed up the computational time, consider the cpu argument
-# take ~ 4 min to run
-tune.splsda <- tune.splsda(X, Y, ncomp = 4, validation = 'Mfold', folds = 5, 
-                           progressBar = FALSE, dist = 'max.dist',
-                           test.keepX = list.keepX, nrepeat = 10) 
-
-
-tune.splsda$choice.keepX
-tune.splsda$choice.ncomp$ncomp
-
-choice.ncomp <- tune.splsda$choice.ncomp$ncomp
-choice.keepX <- tune.splsda$choice.keepX[1:choice.ncomp]
-## sPLS-DA function
-splsda.res <- splsda(X, Y, ncomp = choice.ncomp, keepX = choice.keepX)
-
-perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
-                  progressBar = FALSE, auc = TRUE, nrepeat = 10) 
-
-perf.splsda$error.rate
-
-selectVar(splsda.res, comp = 1)$value
-
-
-## For PLS-DA, train the model
-plsda.train <-   plsda(X, Y, ncomp = 10)
-# then predic
-test.predict <- predict(plsda.train, Xtest, dist = "max.dist")
-# store prediction for the 4th component
-prediction <- test.predict$class$max.dist[,10] 
-# calculate the error rate of the model
-confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
-get.BER(confusion.mat)
-
-splsda.train <- splsda(X, Y, ncomp = 3, keepX = c(50,50,20,20))
-test.predict <- predict(splsda.train,Xtest, dist = "max.dist")
-# store prediction for the 4th component
-prediction <- test.predict$class$max.dist[,3] 
-# calculate the error rate of the model
-confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
-get.BER(confusion.mat) 
-
-
-
-tt=as.data.frame(cbind(Ytest,prediction))
-table(tt$Ytest,tt$prediction)
-
-respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
-  respls <-  plsDA(nogoal_train[,-1], nogoal_train[,1], autosel=FALSE, comps=4)
-  
-  respls$confusion
-  # summary(respls)
-  # plot(RMSEP(respls), legendpos = "topright")
-  # 
-  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
-# detach("package:pls", unload=TRUE)
-#   detach("package:DiscriMiner", unload=TRUE)
-  tx_global=NULL
-  for ( i in 2:40) {
-    i=2
-    
-  pdata_test <- as.data.frame(predict(respls, newdata = nogoal_train, type = "response",ncomp=i))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-  
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-  pdata=rbind(pdata_test,pdata_train)
-  baso=rbind(test,train)
-nogoal_pred=cbind(baso,pdata) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
- res_pred = nogoal_pred %>%
-   filter(unique_teamgoal>=0) %>%
-   group_by(ech,unique_teamgoal,pred) %>%
-   summarise(n=n()) %>%
-   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
-   ungroup() %>%
-   dplyr::select(ech,confusion,n) %>%
-   group_by(ech,confusion) %>%
-   summarise(tot=sum(n)) %>%
-   ungroup() %>%
-   group_by(ech) %>%
-   mutate(pct=(100*tot)/sum(tot)) %>%
-   filter(confusion=='bon') %>%
-   mutate(comp=i)
- 
-   
-    
-  
-  tx_global=rbind(tx_global,res_pred)
-  }
-  
-  #Bon modèle
- pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-bon_model=rbind(pdata_test,pdata_train)
-baso=rbind(test,train)
-
-nogoal_pred_bon_model=cbind(baso,bon_model) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
-check_test=nogoal_pred_bon_model %>%
-  slice(1:117)
-
-table(check_test$pred,check_test$unique_teamgoal)
-
-#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
-#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
-
-#Validation croisée
-
-#rescv <- crossval(respls)
- 
-
-gas2.cv <- crossval(respls, segments = 10)
- 
-plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-summary(gas2.cv, what = "validation")
-MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
-# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-# summary(respls, what = "validation")
-```
-
-
 #Modélisation analyse discriminantes PLS-DA (variable quali) / 8 derniers matchs
-
 ```{r}
-
-
-
+#install.packages("devtools")
+# then load
+library(devtools)
+#install_github("mixOmicsTeam/mixOmics")
+  #PLS regression
+library(mixOmics)
 
 nogoal=score_france_ %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  dplyr::select(saison,Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
   mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,'1','0'),
   pos_class_team_A=ifelse(classement_A<=5,1,
                       ifelse(classement_A<=10 & classement_A>=6,2,
@@ -1683,58 +1396,35 @@ nogoal=score_france_ %>%
 pos_class_team_H=ifelse(classement_H<=5,1,
                       ifelse(classement_H<=10 & classement_H>=6,2,
                              ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
-  left_join(classement_temp,by=c("Team_home"="Team","nb_matchs"="nb_matchs")) %>%
-  left_join(classement_temp,by=c("Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_H ,by=c("saison"="saison","Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("saison"="saison","Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_A,by=c("saison"="saison","Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("saison"="saison","Team_away"="Team","nb_matchs"="nb_matchs")) %>%
   arrange(desc(Date)) %>%
-  filter(is.na(nb_matchs_H_8d.x)==F)
+  filter(is.na(points_H_8d)==F)
 
   
-  
+ 
 #set.seed(101) # Set Seed so that same sample can be reproduced in future also
-# Now Selecting 75% of data as sample from total 'n' rows of the data  
-nogoal_sans_val=nogoal[-c(1:71), ]
+# Now Selecting 75% of data as sample from total 'n' rows of the data 
+validation=nogoal %>% filter(saison<102)
+nogoal_app=nogoal %>% filter(saison==102)
+nogoal_sans_val=nogoal_app[-c(1:71),]
 sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
 train <- nogoal_sans_val[sample, ]
 test  <- nogoal_sans_val[-sample, ]
-test=rbind(test,nogoal[c(1:71), ])
+test=rbind(test,nogoal_app[c(1:71), ],validation)
 nogoal_train= train %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+dplyr::select(-c(saison,Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
 
 nogoal_test= test %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
- 
- install.packages("devtools")
-# then load
-library(devtools)
-install_github("mixOmicsTeam/mixOmics")
-  #PLS regression
-library(mixOmics)
+dplyr::select(-c(saison,Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
 
 X <- as.matrix(nogoal_train[,-1])
 Y <- as.factor(nogoal_train[,1])
 Xtest <- as.matrix(nogoal_test[,-1])
-Ytest <- as.factor(nogoal_test[,1])  
+Ytest <- as.factor(nogoal_test[,1])
 
-## PLS-DA function
-plsda.res <- plsda(X, Y, ncomp = 10)
-  
- 
-set.seed(2543) # for reproducibility here, only when the `cpus' argument is not used
-perf.plsda <- perf(plsda.res, validation = "Mfold", folds = 4, 
-                  progressBar = FALSE, auc = TRUE, nrepeat = 5) 
-
-summary(perf.plsda)
-
-perf.plsda$error.rate
-# perf.plsda.srbct$error.rate  # error rates
-plot(perf.plsda$error.rate, col = color.mixo(1:3), sd = TRUE, legend.position = "horizontal")
-
-
-list.keepX <- c(seq(10, 90, 5))
-set.seed(2543) # for reproducibility here,
-# to speed up the computational time, consider the cpu argument
-# take ~ 4 min to run
 tune.splsda <- tune.splsda(X, Y, ncomp = 4, validation = 'Mfold', folds = 5, 
                            progressBar = FALSE, dist = 'max.dist',
                            test.keepX = list.keepX, nrepeat = 10) 
@@ -1748,332 +1438,101 @@ choice.keepX <- tune.splsda$choice.keepX[1:choice.ncomp]
 ## sPLS-DA function
 splsda.res <- splsda(X, Y, ncomp = choice.ncomp, keepX = choice.keepX)
 
-perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
-                  progressBar = FALSE, auc = TRUE, nrepeat = 10) 
-
-perf.splsda$error.rate
-
-selectVar(splsda.res, comp = 1)$value
-
-
-## For PLS-DA, train the model
-plsda.train <-   plsda(X, Y, ncomp = 10)
-# then predic
-test.predict <- predict(plsda.train, Xtest, dist = "max.dist")
+# perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
+#                   progressBar = FALSE, auc = TRUE, nrepeat = 10) 
+# 
+#splsda.res$error.rate
+ 
+# 
+# selectVar(splsda.res, comp = 1)$value
+ 
+test.predict <- predict(splsda.res, Xtest, dist = "max.dist")
 # store prediction for the 4th component
-prediction <- test.predict$class$max.dist[,10] 
+prediction <- test.predict$class$max.dist[,tune.splsda$choice.ncomp$ncomp] 
 # calculate the error rate of the model
 confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
 get.BER(confusion.mat)
-keepX = c(50,50,20,20)
+ 
 
-for (i in 1:67) {
-splsda.train <- splsda(X, Y, ncomp = 1,keepX = c(10))
-test.predict <- predict(splsda.train,Xtest, dist = "max.dist")
-# store prediction for the 4th component
-prediction <- test.predict$class$max.dist[,1] 
-# calculate the error rate of the model
-confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
-print(i)
-print(get.BER(confusion.mat)) 
-}
+ 
 
+ 
+prediction_finale =as.data.frame(cbind(test.predict$predict[,,tune.splsda$choice.ncomp$ncomp],prediction,test$unique_teamgoal,test)) %>%
+  mutate(uniquegoal=as.character(`test$unique_teamgoal`))
+  arrange(desc(`1`))
+ 
+ prediction_finale_sans_na_1=prediction_finale %>%
+   filter(uniquegoal %in% c('0','1') & `1`>0.5) %>%
+   dplyr::select(`1`,prediction,uniquegoal,saison,Date,Team_home,Team_away) %>%
+    arrange(desc(`1`)) %>%
+   mutate(bon=ifelse(uniquegoal==prediction,1,0),
+          tot=1,
+          deciles=ifelse(`1`>0.95,1,
+                   ifelse(`1`>0.90,2,
+                   ifelse(`1`>0.85,3,
+                   ifelse(`1`>0.80,4,
+                   ifelse(`1`>0.75,5,
+                   ifelse(`1`>0.70,6,
+                   ifelse(`1`>0.65,7,
+                   ifelse(`1`>0.60,8,9
+                         ))))))))) %>%
+   group_by(deciles) %>%
+   summarise(bon_sum=sum(bon),tot=sum(tot)) %>%
+ mutate(pct=bon_sum/tot,erreur=tot-bon_sum)
+ 
+ prediction_finale_sans_na_team_1=prediction_finale %>%
+   filter(uniquegoal %in% c('0','1') & `1`>0.5) %>%
+   dplyr::select(`1`,prediction,uniquegoal,saison,Date,Team_home) %>%
+   rename(Team=Team_home)
+ 
+  prediction_finale_sans_na_team_2=prediction_finale %>%
+   filter(uniquegoal %in% c('0','1') & `1`>0.5) %>%
+   dplyr::select(`1`,prediction,uniquegoal,saison,Date,Team_away) %>%
+   rename(Team=Team_away)
+ 
+ 
+prediction_finale_sans_na_team=rbind(prediction_finale_sans_na_team_1,prediction_finale_sans_na_team_2)
 
-
-tt=as.data.frame(cbind(prediction,test))
-table(tt$Ytest,tt$prediction)
-
-respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
-  respls <-  plsDA(nogoal_train[,-1], nogoal_train[,1], autosel=FALSE, comps=4)
-  
-  respls$confusion
-  # summary(respls)
-  # plot(RMSEP(respls), legendpos = "topright")
-  # 
-  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
-# detach("package:pls", unload=TRUE)
-#   detach("package:DiscriMiner", unload=TRUE)
-  tx_global=NULL
-  for ( i in 2:40) {
-    i=2
-    
-  pdata_test <- as.data.frame(predict(respls, newdata = nogoal_train, type = "response",ncomp=i))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-  
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
+prediction_finale_sans_na_1=prediction_finale_sans_na_team %>%
    
-  
-  pdata=rbind(pdata_test,pdata_train)
-  baso=rbind(test,train)
-nogoal_pred=cbind(baso,pdata) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
- res_pred = nogoal_pred %>%
-   filter(unique_teamgoal>=0) %>%
-   group_by(ech,unique_teamgoal,pred) %>%
-   summarise(n=n()) %>%
-   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
-   ungroup() %>%
-   dplyr::select(ech,confusion,n) %>%
-   group_by(ech,confusion) %>%
-   summarise(tot=sum(n)) %>%
-   ungroup() %>%
-   group_by(ech) %>%
-   mutate(pct=(100*tot)/sum(tot)) %>%
-   filter(confusion=='bon') %>%
-   mutate(comp=i)
+   mutate(bon=ifelse(uniquegoal==prediction,1,0),
+          tot=1,
+          deciles=ifelse(`1`>0.95,1,
+                   ifelse(`1`>0.90,2,
+                   ifelse(`1`>0.85,3,
+                   ifelse(`1`>0.80,4,
+                   ifelse(`1`>0.75,5,
+                   ifelse(`1`>0.70,6,
+                   ifelse(`1`>0.65,7,
+                   ifelse(`1`>0.60,8,9
+                         ))))))))) %>%
+   group_by(deciles,Team) %>%
+   summarise(bon_sum=sum(bon),tot=sum(tot)) %>%
+ mutate(pct=bon_sum/tot,erreur=tot-bon_sum)
  
-   
-    
-  
-  tx_global=rbind(tx_global,res_pred)
-  }
-  
-  #Bon modèle
- pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-bon_model=rbind(pdata_test,pdata_train)
-baso=rbind(test,train)
-
-nogoal_pred_bon_model=cbind(baso,bon_model) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.55,1,0))
-
-check_test=nogoal_pred_bon_model %>%
-  slice(1:117)
-
-table(check_test$pred,check_test$unique_teamgoal)
-
-#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
-#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
-
-#Validation croisée
-
-#rescv <- crossval(respls)
+ plot(prediction_finale_sans_na_1$part_bon,prediction_finale_sans_na_1$`1`)
  
-
-gas2.cv <- crossval(respls, segments = 10)
  
-plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-summary(gas2.cv, what = "validation")
-MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
-# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-# summary(respls, what = "validation")
-```
-
-#Modélisation : Nb buts dans le matchs
-```{r}
-
-
-nogoal=score_france_ %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
-  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))+as.numeric(as.character(Final_H))>=3,1,0),
-  pos_class_team_A=ifelse(classement_A<=5,1,
-                      ifelse(classement_A<=10 & classement_A>=6,2,
-                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
-pos_class_team_H=ifelse(classement_H<=5,1,
-                      ifelse(classement_H<=10 & classement_H>=6,2,
-                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
-  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
-  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
-  arrange(desc(Date))
-
-  
-  
-#set.seed(101) # Set Seed so that same sample can be reproduced in future also
-# Now Selecting 75% of data as sample from total 'n' rows of the data  
-nogoal_sans_val=nogoal[-c(1:71,300:380), ]
-sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
-train <- nogoal_sans_val[sample, ]
-test  <- nogoal_sans_val[-sample, ]
-test=rbind(test,nogoal[c(1:71), ])
-nogoal_train= train %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
-nogoal_test= test %>%
-dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
-
-summary(nogoal_train)
+ prediction_finale_sans_na_0=prediction_finale %>%
+   filter(uniquegoal %in% c('0','1') & `0`>0.5) %>%
+    arrange(desc(`0`)) %>%
+   mutate(bon=ifelse(uniquegoal==prediction,1,0),
+          tot=1,
+          deciles=ifelse(`0`>0.95,1,
+                   ifelse(`0`>0.90,2,
+                   ifelse(`0`>0.85,3,
+                   ifelse(`0`>0.80,4,
+                   ifelse(`0`>0.75,5,
+                   ifelse(`0`>0.70,6,
+                   ifelse(`0`>0.65,7,
+                   ifelse(`0`>0.60,8,9
+                         ))))))))) %>%
+   group_by(deciles) %>%
+   summarise(bon_sum=sum(bon),tot=sum(tot)) %>%
+ mutate(pct=bon_sum/tot,erreur=tot-bon_sum)
  
-  #PLS regression
-
-  respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
-  # summary(respls)
-  # plot(RMSEP(respls), legendpos = "topright")
-  # 
-  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
-  
-  tx_global=NULL
-  for ( i in 1:40) {
-    
-  pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=i))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-  
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-  pdata=rbind(pdata_test,pdata_train)
-  baso=rbind(test,train)
-nogoal_pred=cbind(baso,pdata) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
-  mutate(pred=ifelse(pdata>0.5,1,0))
-
- res_pred = nogoal_pred %>%
-   filter(unique_teamgoal>=0) %>%
-   group_by(ech,unique_teamgoal,pred) %>%
-   summarise(n=n()) %>%
-   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
-   ungroup() %>%
-   dplyr::select(ech,confusion,n) %>%
-   group_by(ech,confusion) %>%
-   summarise(tot=sum(n)) %>%
-   ungroup() %>%
-   group_by(ech) %>%
-   mutate(pct=(100*tot)/sum(tot)) %>%
-   filter(confusion=='bon') %>%
-   mutate(comp=i)
  
-   
-    
-  
-  tx_global=rbind(tx_global,res_pred)
-  }
-  
-  #Bon modèle
- pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=4))  
- names(pdata_test) ="pdata"
-  pdata_test$ech="test"
-
-    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=4))  
- names(pdata_train) ="pdata"
-  pdata_train$ech="train"
-   
-  
-bon_model=rbind(pdata_test,pdata_train)
-baso=rbind(test,train)
-
-nogoal_pred_bon_model=cbind(baso,bon_model) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.5,1,0))
-
-check_test=nogoal_pred_bon_model %>%
-  slice(1:117)
-
-table(check_test$pred,check_test$unique_teamgoal)
-
-#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
-#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
-
-#Validation croisée
-
-#rescv <- crossval(respls)
+ plot(prediction_finale_sans_na_0$part_bon,prediction_finale_sans_na_0$`0`)
  
-
-gas2.cv <- crossval(respls, segments = 10)
- 
-plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-summary(gas2.cv, what = "validation")
-MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
-# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
-# summary(respls, what = "validation")
-   
-```
-
-
-
-#Regression logistique
-```{r}
-# attach(nogoal_mod)
-# nogoal$unique_teamgoal=as.factor(nogoal$unique_teamgoal)
-res_glm=glm( unique_teamgoal~pos_class_team_A+pos_class_team_H, family=binomial(link=logit),data=nogoal_train)
-#summary(res_glm)
-nogoal_train1 =nogoal%>%
-  filter(Date>'2018-01-01')
-table(nogoal_train1$pos_class_team_H,nogoal_train1$unique_teamgoal)
-table(nogoal_train1$pos_class_team_A,nogoal_train1$unique_teamgoal)
-
-table(paste0(nogoal_train1$pos_class_team_A,nogoal_train1$pos_class_team_H),nogoal_train1$unique_teamgoal)
-# Stepwise regression model
-step.model <- stepAIC(res_glm, direction = "both", 
-                      trace = FALSE)
-summary(step.model)
-
-
-
-# Use your model to make predictions, in this example newdata = training set, but replace with your test set    
-pdata <- predict(step.model, newdata = test, type = "response")
-
-nogoal_pred=cbind(test,pdata) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.5,1,0))
-
- 
- res_pred=as.data.frame(table(nogoal_pred$unique_teamgoal,nogoal_pred$pred))
- 
- res_pred_bon= res_pred %>%
-   filter(Var1==Var2) %>%
-   summarise(bon=sum(Freq))
- 
-  res_pred_mauvais= res_pred %>%
-   filter(Var1!=Var2) %>%
-   summarise(mauvais=sum(Freq))
-  
-  tx=cbind(res_pred_bon,res_pred_mauvais)
-  tx=tx %>%
-    mutate(tx=bon/(mauvais+bon))
-```
-
-#Déchet : test manuel sur des équipes
-```{r}
-#Prendre les équipes
-
-gg=as.data.frame(cbind(c('2019-03-31','2019-03-31','2019-03-31','2019-03-31','2019-03-31'),c('Toulouse','Reims','Montpellier','Nimes'),c('Paris SG','Lille','Guingamp','Rennes'),c(0,1,2,3),c(1,1,0,1),c(13,6,9,11),c(1,2,19,10),c(30,30,30,30)))
-names(gg)=c('Date','Team_home','Team_away','Final_H','Final_A','classement_H','classement_A','nb_matchs') 
-
-gg = gg %>%
-  mutate(Final_H=as.numeric(as.character(Final_H)),
-         Final_A=as.numeric(as.character(Final_A)),
-         classement_A=as.numeric(as.character(classement_A)),
-         classement_H=as.numeric(as.character(classement_H)),
-         nb_matchs=as.numeric(as.character(nb_matchs)),
-         Date=as.Date(Date,format='%Y-%m-%d'))
- 
-gg= gg %>%
-  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
-  pos_class_team_A=ifelse(classement_A<=5,1,
-                      ifelse(classement_A<=10 & classement_A>=6,2,
-                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
-pos_class_team_H=ifelse(classement_H<=5,1,
-                      ifelse(classement_H<=10 & classement_H>=6,2,
-                             ifelse(classement_A<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
-  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
-  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date"))
-
-gg[,c(4:109)] <- lapply(gg[,c(4:109)], function(x) as.numeric(as.character(x)))
-summary(gg)
-#Bon modèle
-
-  jojo= rbind(test,gg)
-bon_model_gg <- as.data.frame(predict(respls, newdata = jojo, type = "response",ncomp=12))  
- names(bon_model_gg) ="pdata"
-  
-
-nogoal_pred_bon_model=cbind(jojo,bon_model_gg) %>%
-  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
-  mutate(pred=ifelse(pdata>0.5,1,0))
 ```
 

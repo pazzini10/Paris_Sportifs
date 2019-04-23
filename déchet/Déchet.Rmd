@@ -1,0 +1,734 @@
+#Modélisation : Nb buts dans le matchs
+```{r}
+
+
+nogoal=score_france_ %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))+as.numeric(as.character(Final_H))>=3,1,0),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
+  arrange(desc(Date))
+
+  
+  
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+nogoal_sans_val=nogoal[-c(1:71,300:380), ]
+sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
+train <- nogoal_sans_val[sample, ]
+test  <- nogoal_sans_val[-sample, ]
+test=rbind(test,nogoal[c(1:71), ])
+nogoal_train= train %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+summary(nogoal_train)
+ 
+  #PLS regression
+
+  respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
+  # summary(respls)
+  # plot(RMSEP(respls), legendpos = "topright")
+  # 
+  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
+  
+  tx_global=NULL
+  for ( i in 1:40) {
+    
+  pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=i))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+  pdata=rbind(pdata_test,pdata_train)
+  baso=rbind(test,train)
+nogoal_pred=cbind(baso,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+ res_pred = nogoal_pred %>%
+   filter(unique_teamgoal>=0) %>%
+   group_by(ech,unique_teamgoal,pred) %>%
+   summarise(n=n()) %>%
+   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
+   ungroup() %>%
+   dplyr::select(ech,confusion,n) %>%
+   group_by(ech,confusion) %>%
+   summarise(tot=sum(n)) %>%
+   ungroup() %>%
+   group_by(ech) %>%
+   mutate(pct=(100*tot)/sum(tot)) %>%
+   filter(confusion=='bon') %>%
+   mutate(comp=i)
+ 
+   
+    
+  
+  tx_global=rbind(tx_global,res_pred)
+  }
+  
+  #Bon modèle
+ pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=4))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=4))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+bon_model=rbind(pdata_test,pdata_train)
+baso=rbind(test,train)
+
+nogoal_pred_bon_model=cbind(baso,bon_model) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+check_test=nogoal_pred_bon_model %>%
+  slice(1:117)
+
+table(check_test$pred,check_test$unique_teamgoal)
+
+#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
+#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
+
+#Validation croisée
+
+#rescv <- crossval(respls)
+ 
+
+gas2.cv <- crossval(respls, segments = 10)
+ 
+plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+summary(gas2.cv, what = "validation")
+MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
+# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+# summary(respls, what = "validation")
+   
+```
+
+
+
+#Regression logistique
+```{r}
+# attach(nogoal_mod)
+# nogoal$unique_teamgoal=as.factor(nogoal$unique_teamgoal)
+res_glm=glm( unique_teamgoal~pos_class_team_A+pos_class_team_H, family=binomial(link=logit),data=nogoal_train)
+#summary(res_glm)
+nogoal_train1 =nogoal%>%
+  filter(Date>'2018-01-01')
+table(nogoal_train1$pos_class_team_H,nogoal_train1$unique_teamgoal)
+table(nogoal_train1$pos_class_team_A,nogoal_train1$unique_teamgoal)
+
+table(paste0(nogoal_train1$pos_class_team_A,nogoal_train1$pos_class_team_H),nogoal_train1$unique_teamgoal)
+# Stepwise regression model
+step.model <- stepAIC(res_glm, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+
+
+
+# Use your model to make predictions, in this example newdata = training set, but replace with your test set    
+pdata <- predict(step.model, newdata = test, type = "response")
+
+nogoal_pred=cbind(test,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+
+ 
+ res_pred=as.data.frame(table(nogoal_pred$unique_teamgoal,nogoal_pred$pred))
+ 
+ res_pred_bon= res_pred %>%
+   filter(Var1==Var2) %>%
+   summarise(bon=sum(Freq))
+ 
+  res_pred_mauvais= res_pred %>%
+   filter(Var1!=Var2) %>%
+   summarise(mauvais=sum(Freq))
+  
+  tx=cbind(res_pred_bon,res_pred_mauvais)
+  tx=tx %>%
+    mutate(tx=bon/(mauvais+bon))
+```
+
+#Déchet : test manuel sur des équipes
+```{r}
+#Prendre les équipes
+
+gg=as.data.frame(cbind(c('2019-03-31','2019-03-31','2019-03-31','2019-03-31','2019-03-31'),c('Toulouse','Reims','Montpellier','Nimes'),c('Paris SG','Lille','Guingamp','Rennes'),c(0,1,2,3),c(1,1,0,1),c(13,6,9,11),c(1,2,19,10),c(30,30,30,30)))
+names(gg)=c('Date','Team_home','Team_away','Final_H','Final_A','classement_H','classement_A','nb_matchs') 
+
+gg = gg %>%
+  mutate(Final_H=as.numeric(as.character(Final_H)),
+         Final_A=as.numeric(as.character(Final_A)),
+         classement_A=as.numeric(as.character(classement_A)),
+         classement_H=as.numeric(as.character(classement_H)),
+         nb_matchs=as.numeric(as.character(nb_matchs)),
+         Date=as.Date(Date,format='%Y-%m-%d'))
+ 
+gg= gg %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_A<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date"))
+
+gg[,c(4:109)] <- lapply(gg[,c(4:109)], function(x) as.numeric(as.character(x)))
+summary(gg)
+#Bon modèle
+
+  jojo= rbind(test,gg)
+bon_model_gg <- as.data.frame(predict(respls, newdata = jojo, type = "response",ncomp=12))  
+ names(bon_model_gg) ="pdata"
+  
+
+nogoal_pred_bon_model=cbind(jojo,bon_model_gg) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.5,1,0))
+```
+
+
+#Modélisation : But ou pas dans le match avec des pcts
+```{r}
+
+
+nogoal=score_france_ %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,1,0),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
+  arrange(desc(Date))
+
+  
+  
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+nogoal_sans_val=nogoal[-c(1:71,300:380), ]
+sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
+train <- nogoal_sans_val[sample, ]
+test  <- nogoal_sans_val[-sample, ]
+test=rbind(test,nogoal[c(1:71), ])
+nogoal_train= train %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+summary(nogoal_train)
+ 
+  #PLS regression
+
+  respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
+  # summary(respls)
+  # plot(RMSEP(respls), legendpos = "topright")
+  # 
+  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
+  
+  tx_global=NULL
+  for ( i in 2:40) {
+    
+  pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=i))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+  pdata=rbind(pdata_test,pdata_train)
+  baso=rbind(test,train)
+nogoal_pred=cbind(baso,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+ res_pred = nogoal_pred %>%
+   filter(unique_teamgoal>=0) %>%
+   group_by(ech,unique_teamgoal,pred) %>%
+   summarise(n=n()) %>%
+   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
+   ungroup() %>%
+   dplyr::select(ech,confusion,n) %>%
+   group_by(ech,confusion) %>%
+   summarise(tot=sum(n)) %>%
+   ungroup() %>%
+   group_by(ech) %>%
+   mutate(pct=(100*tot)/sum(tot)) %>%
+   filter(confusion=='bon') %>%
+   mutate(comp=i)
+ 
+   
+    
+  
+  tx_global=rbind(tx_global,res_pred)
+  }
+  
+  #Bon modèle
+ pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+bon_model=rbind(pdata_test,pdata_train)
+baso=rbind(test,train)
+
+nogoal_pred_bon_model=cbind(baso,bon_model) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+check_test=nogoal_pred_bon_model %>%
+  slice(1:117)
+
+table(check_test$pred,check_test$unique_teamgoal)
+
+#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
+#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
+
+#Validation croisée
+
+#rescv <- crossval(respls)
+ 
+
+gas2.cv <- crossval(respls, segments = 10)
+ 
+plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+summary(gas2.cv, what = "validation")
+MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
+# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+# summary(respls, what = "validation")
+   
+```
+
+
+#Modélisation analyse discriminantes PLS-DA (variable quali)
+
+```{r}
+
+
+
+
+nogoal=score_france_ %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,'1','0'),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_var_H,by=c("Team_home"="Team","Date"="Date")) %>%
+  left_join(classement_var_A,by=c("Team_away"="Team","Date"="Date")) %>%
+  arrange(desc(Date))
+
+  
+  
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+nogoal_sans_val=nogoal[-c(1:71,300:380), ]
+sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
+train <- nogoal_sans_val[sample, ]
+test  <- nogoal_sans_val[-sample, ]
+test=rbind(test,nogoal[c(1:71), ])
+nogoal_train= train %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+ 
+ install.packages("devtools")
+# then load
+library(devtools)
+install_github("mixOmicsTeam/mixOmics")
+  #PLS regression
+library(mixOmics)
+
+X <- as.matrix(nogoal_train[,-1])
+Y <- as.factor(nogoal_train[,1])
+Xtest <- as.matrix(nogoal_test[,-1])
+Ytest <- as.factor(nogoal_test[,1])  
+
+## PLS-DA function
+plsda.res <- plsda(X, Y, ncomp = 10)
+  
+ 
+set.seed(2543) # for reproducibility here, only when the `cpus' argument is not used
+perf.plsda <- perf(plsda.res, validation = "Mfold", folds = 4, 
+                  progressBar = FALSE, auc = TRUE, nrepeat = 5) 
+
+summary(perf.plsda)
+
+perf.plsda$error.rate
+# perf.plsda.srbct$error.rate  # error rates
+plot(perf.plsda$error.rate, col = color.mixo(1:3), sd = TRUE, legend.position = "horizontal")
+
+
+list.keepX <- c(seq(10, 50, 10))
+set.seed(2543) # for reproducibility here,
+# to speed up the computational time, consider the cpu argument
+# take ~ 4 min to run
+tune.splsda <- tune.splsda(X, Y, ncomp = 4, validation = 'Mfold', folds = 5, 
+                           progressBar = FALSE, dist = 'max.dist',
+                           test.keepX = list.keepX, nrepeat = 10) 
+
+
+tune.splsda$choice.keepX
+tune.splsda$choice.ncomp$ncomp
+
+choice.ncomp <- tune.splsda$choice.ncomp$ncomp
+choice.keepX <- tune.splsda$choice.keepX[1:choice.ncomp]
+## sPLS-DA function
+splsda.res <- splsda(X, Y, ncomp = choice.ncomp, keepX = choice.keepX)
+
+perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
+                  progressBar = FALSE, auc = TRUE, nrepeat = 10) 
+
+perf.splsda$error.rate
+
+selectVar(splsda.res, comp = 1)$value
+
+
+## For PLS-DA, train the model
+plsda.train <-   plsda(X, Y, ncomp = 10)
+# then predic
+test.predict <- predict(plsda.train, Xtest, dist = "max.dist")
+# store prediction for the 4th component
+prediction <- test.predict$class$max.dist[,10] 
+# calculate the error rate of the model
+confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+get.BER(confusion.mat)
+
+splsda.train <- splsda(X, Y, ncomp = 1, keepX = c(50,50,20,20))
+test.predict <- predict(splsda.train,Xtest, dist = "max.dist")
+# store prediction for the 4th component
+prediction <- test.predict$class$max.dist[,1] 
+# calculate the error rate of the model
+confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+get.BER(confusion.mat) 
+
+
+
+tt1=as.data.frame(cbind(Ytest,Xtest,prediction))
+table(tt$Ytest,tt$prediction)
+
+respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
+  respls <-  plsDA(nogoal_train[,-1], nogoal_train[,1], autosel=FALSE, comps=4)
+  
+  respls$confusion
+  # summary(respls)
+  # plot(RMSEP(respls), legendpos = "topright")
+  # 
+  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
+# detach("package:pls", unload=TRUE)
+#   detach("package:DiscriMiner", unload=TRUE)
+  tx_global=NULL
+  for ( i in 2:40) {
+    i=2
+    
+  pdata_test <- as.data.frame(predict(respls, newdata = nogoal_train, type = "response",ncomp=i))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+  pdata=rbind(pdata_test,pdata_train)
+  baso=rbind(test,train)
+nogoal_pred=cbind(baso,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+ res_pred = nogoal_pred %>%
+   filter(unique_teamgoal>=0) %>%
+   group_by(ech,unique_teamgoal,pred) %>%
+   summarise(n=n()) %>%
+   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
+   ungroup() %>%
+   dplyr::select(ech,confusion,n) %>%
+   group_by(ech,confusion) %>%
+   summarise(tot=sum(n)) %>%
+   ungroup() %>%
+   group_by(ech) %>%
+   mutate(pct=(100*tot)/sum(tot)) %>%
+   filter(confusion=='bon') %>%
+   mutate(comp=i)
+ 
+   
+    
+  
+  tx_global=rbind(tx_global,res_pred)
+  }
+  
+  #Bon modèle
+ pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+bon_model=rbind(pdata_test,pdata_train)
+baso=rbind(test,train)
+
+nogoal_pred_bon_model=cbind(baso,bon_model) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+check_test=nogoal_pred_bon_model %>%
+  slice(1:117)
+
+table(check_test$pred,check_test$unique_teamgoal)
+
+#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
+#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
+
+#Validation croisée
+
+#rescv <- crossval(respls)
+ 
+
+gas2.cv <- crossval(respls, segments = 10)
+ 
+plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+summary(gas2.cv, what = "validation")
+MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
+# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+# summary(respls, what = "validation")
+```
+
+
+
+
+```{r}
+
+
+
+
+nogoal=score_france_ %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(unique_teamgoal=ifelse(as.numeric(as.character(Final_A))==0 | as.numeric(as.character(Final_H))==0,'1','0'),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_temp_H ,by=c("Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_A,by=c("Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  arrange(desc(Date)) %>%
+  filter(is.na(points_H_8d)==F)
+
+  
+ 
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+nogoal_sans_val=nogoal[-c(1:71), ]
+sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
+train <- nogoal_sans_val[sample, ]
+test  <- nogoal_sans_val[-sample, ]
+test=rbind(test,nogoal[c(1:71), ])
+nogoal_train= train %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+ 
+
+
+X <- as.matrix(nogoal_train[,-1])
+Y <- as.factor(nogoal_train[,1])
+Xtest <- as.matrix(nogoal_test[,-1])
+Ytest <- as.factor(nogoal_test[,1])  
+
+## PLS-DA function
+plsda.res <- plsda(X, Y, ncomp = 10)
+  
+ 
+set.seed(2543) # for reproducibility here, only when the `cpus' argument is not used
+perf.plsda <- perf(plsda.res, validation = "Mfold", folds = 4, 
+                  progressBar = FALSE, auc = TRUE, nrepeat = 5) 
+
+summary(perf.plsda)
+
+perf.plsda$error.rate
+# perf.plsda.srbct$error.rate  # error rates
+plot(perf.plsda$error.rate, col = color.mixo(1:3), sd = TRUE, legend.position = "horizontal")
+
+
+list.keepX <- c(seq(10, 90, 5))
+set.seed(2543) # for reproducibility here,
+# to speed up the computational time, consider the cpu argument
+# take ~ 4 min to run
+tune.splsda <- tune.splsda(X, Y, ncomp = 4, validation = 'Mfold', folds = 5, 
+                           progressBar = FALSE, dist = 'max.dist',
+                           test.keepX = list.keepX, nrepeat = 10) 
+
+
+tune.splsda$choice.keepX
+tune.splsda$choice.ncomp$ncomp
+
+choice.ncomp <- tune.splsda$choice.ncomp$ncomp
+choice.keepX <- tune.splsda$choice.keepX[1:choice.ncomp]
+## sPLS-DA function
+splsda.res <- splsda(X, Y, ncomp = choice.ncomp, keepX = choice.keepX)
+
+perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
+                  progressBar = FALSE, auc = TRUE, nrepeat = 10) 
+
+perf.splsda$error.rate
+
+selectVar(splsda.res, comp = 1)$value
+
+
+## For PLS-DA, train the model
+plsda.train <-   plsda(X, Y, ncomp = 10)
+# then predic
+test.predict <- predict(plsda.train, Xtest, dist = "max.dist")
+# store prediction for the 4th component
+prediction <- test.predict$class$max.dist[,10] 
+# calculate the error rate of the model
+confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+get.BER(confusion.mat)
+keepX = c(50,50,20,20)
+
+for (i in 1:67) {
+splsda.train <- splsda(X, Y, ncomp = 1,keepX = c(i))
+test.predict <- predict(splsda.train,Xtest, dist = "max.dist")
+# store prediction for the 4th component
+prediction <- test.predict$class$max.dist[,1] 
+
+
+# calculate the error rate of the model
+confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+print(i)
+print(get.BER(confusion.mat)) 
+}
+
+
+
+tt=as.data.frame(cbind(prediction,test))
+tt1=as.data.frame(cbind(test.predict$predict,prediction,test$unique_teamgoal,test))
+table(tt$Ytest,tt$prediction)
+
+respls <- plsr( unique_teamgoal ~ ., data= nogoal_train, ncomp=40)
+  respls <-  plsDA(nogoal_train[,-1], nogoal_train[,1], autosel=FALSE, comps=4)
+  
+  respls$confusion
+  # summary(respls)
+  # plot(RMSEP(respls), legendpos = "topright")
+  # 
+  # plot(respls, ncomp = 2, asp = 1, line = TRUE)
+# detach("package:pls", unload=TRUE)
+#   detach("package:DiscriMiner", unload=TRUE)
+  tx_global=NULL
+  for ( i in 2:40) {
+    i=2
+    
+  pdata_test <- as.data.frame(predict(respls, newdata = nogoal_train, type = "response",ncomp=i))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+  
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=i))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+  pdata=rbind(pdata_test,pdata_train)
+  baso=rbind(test,train)
+nogoal_pred=cbind(baso,pdata) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata,ech) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+ res_pred = nogoal_pred %>%
+   filter(unique_teamgoal>=0) %>%
+   group_by(ech,unique_teamgoal,pred) %>%
+   summarise(n=n()) %>%
+   mutate(confusion=ifelse(unique_teamgoal==pred,"bon","mauvais")) %>%
+   ungroup() %>%
+   dplyr::select(ech,confusion,n) %>%
+   group_by(ech,confusion) %>%
+   summarise(tot=sum(n)) %>%
+   ungroup() %>%
+   group_by(ech) %>%
+   mutate(pct=(100*tot)/sum(tot)) %>%
+   filter(confusion=='bon') %>%
+   mutate(comp=i)
+ 
+   
+    
+  
+  tx_global=rbind(tx_global,res_pred)
+  }
+  
+  #Bon modèle
+ pdata_test <- as.data.frame(predict(respls, newdata = test, type = "response",ncomp=2))  
+ names(pdata_test) ="pdata"
+  pdata_test$ech="test"
+
+    pdata_train <- as.data.frame(predict(respls, newdata = train, type = "response",ncomp=2))  
+ names(pdata_train) ="pdata"
+  pdata_train$ech="train"
+   
+  
+bon_model=rbind(pdata_test,pdata_train)
+baso=rbind(test,train)
+
+nogoal_pred_bon_model=cbind(baso,bon_model) %>%
+  dplyr::select(Date,Team_home,Team_away,Final_H,Final_A,nb_matchs,unique_teamgoal,pdata) %>%
+  mutate(pred=ifelse(pdata>0.55,1,0))
+
+check_test=nogoal_pred_bon_model %>%
+  slice(1:117)
+
+table(check_test$pred,check_test$unique_teamgoal)
+
+#save(respls,file='/Users/dflouriot/R/Paris_Sportifs/model_PLS_uniquegoal_3comp_65pct68.rda')
+#write.csv2(nogoal_pred_bon_model,file="/Users/dflouriot/R/Paris_Sportifs/sortie_pls.csv")
+
+#Validation croisée
+
+#rescv <- crossval(respls)
+ 
+
+gas2.cv <- crossval(respls, segments = 10)
+ 
+plot(MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+summary(gas2.cv, what = "validation")
+MSEP(gas2.cv,estimate = c("all", "train", "CV", "adjCV", "test"))
+# plot(MSEP(respls,estimate = c("all", "train", "CV", "adjCV", "test")), legendpos="topright")
+# summary(respls, what = "validation")
+ 
+```
