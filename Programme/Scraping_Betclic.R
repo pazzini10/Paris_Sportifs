@@ -55,7 +55,7 @@ bectclic_cote_scrap_fin=NULL
 
 for (u in betclic1[,"relativeDesktopUrl"]) { 
   #u='italie-bosnie-herzegovine-m2036832'
-  #u='allemagne-bundesliga-2018-2019-m1723982'
+  #u='swansea-derby-m2051436'
   
   print(u)
   
@@ -133,6 +133,7 @@ for (u in betclic1[,"relativeDesktopUrl"]) {
     
   }
   
+  if (is.null(betclic_cote_final)==FALSE) {
   #Remise en forme globale de la sortie Scrapping  
   names(betclic_cote_final)=c('cote','cote_id','cote_lib')
   betclic_cote_final1 = betclic_cote_final %>%
@@ -152,6 +153,7 @@ for (u in betclic1[,"relativeDesktopUrl"]) {
   
   #Table de sortie d'erreur 
   bectclic_cote_scrap_fin=rbind(bectclic_cote_scrap_fin,betclic_cote_final1)
+  }
 }
 
 
