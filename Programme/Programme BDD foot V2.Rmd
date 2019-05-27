@@ -1614,6 +1614,109 @@ prediction_finale_sans_na_1=prediction_finale_sans_na_team %>%
  
  
 ```
+
+#Modélisation du nombre de buts : +2,5 ou moins
+```{r}
+
+nogoal=score_france_ %>%
+  dplyr::select(saison,Date,Team_home,Team_away,Final_H,Final_A,classement_A,classement_H,nb_matchs) %>%
+  mutate(plus2buts=ifelse(as.numeric(as.character(Final_A))+as.numeric(as.character(Final_H))>=3,'1','0'),
+  pos_class_team_A=ifelse(classement_A<=5,1,
+                      ifelse(classement_A<=10 & classement_A>=6,2,
+                             ifelse(classement_A<=15 & classement_A>=11,3,ifelse(classement_A<=20 & classement_A>=16,4,0)))) , 
+pos_class_team_H=ifelse(classement_H<=5,1,
+                      ifelse(classement_H<=10 & classement_H>=6,2,
+                             ifelse(classement_H<=15 & classement_H>=11,3,ifelse(classement_H<=20 & classement_H>=16,4,0))))) %>%
+  left_join(classement_temp_H ,by=c("saison"="saison","Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("saison"="saison","Team_home"="Team","nb_matchs"="nb_matchs")) %>%
+   left_join(classement_temp_A,by=c("saison"="saison","Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  left_join(classement_temp_tot ,by=c("saison"="saison","Team_away"="Team","nb_matchs"="nb_matchs")) %>%
+  arrange(desc(Date)) %>%
+  filter(is.na(points_H_8d)==F)
+
+ 
+ 
+#set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data 
+validation=nogoal %>% filter(saison<100)
+ nogoal_app=nogoal %>% filter(saison>=100) #%>%
+#   filter(is.na(unique_teamgoal)==F)
+nogoal_sans_valt=nogoal_app[c(1:69),]
+ nogoal_app=nogoal %>% filter(saison>=100) %>%
+   filter(is.na(plus2buts)==F)
+ 
+ nogoal_sans_val=nogoal_app[-c(1:35),]
+sample <- sample.int(n = nrow(nogoal_sans_val), size = floor(.80*nrow(nogoal_sans_val)), replace = F)
+train <- nogoal_sans_val[sample, ]
+test  <- nogoal_sans_val[-sample, ]
+test=rbind(test,nogoal_sans_valt)#,validation)
+nogoal_train= train %>%
+dplyr::select(-c(saison,Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_test= test %>%
+dplyr::select(-c(saison,Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+nogoal_validation= validation %>%
+dplyr::select(-c(saison,Date,Final_H,Team_home,Team_away,classement_H,classement_A,Final_A,nb_matchs))
+
+X <- as.matrix(nogoal_train[,-1])
+Y <- as.factor(nogoal_train[,1])
+Xtest <- as.matrix(nogoal_test[,-1])
+Ytest <- as.factor(nogoal_test[,1])
+
+Xvalidation <- as.matrix(nogoal_validation[,-1])
+Yvalidation <- as.factor(nogoal_validation[,1])
+list.keepX <- c(seq(10, 100, 5))
+tune.splsda <- tune.splsda(X, Y, ncomp = 3, validation = 'Mfold', folds = 5, 
+                           progressBar = TRUE, dist = 'max.dist',
+                           test.keepX = list.keepX, nrepeat = 100) 
+
+tune.splsda$error.rate.class
+tune.splsda$choice.keepX
+tune.splsda$choice.ncomp$ncomp
+
+choice.ncomp <- tune.splsda$choice.ncomp$ncomp
+choice.keepX <- tune.splsda$choice.keepX[1:choice.ncomp]
+## sPLS-DA function
+ 
+splsda.res <- splsda(X, Y, ncomp =choice.ncomp , keepX = choice.keepX)
+ 
+# for (i in 1:67) {
+# splsda.train <- splsda(X, Y, ncomp = 3,keepX = c(20,75,10))
+# test.predict <- predict(splsda.train,Xtest, dist = "max.dist")
+# # store prediction for the 4th component
+# prediction <- test.predict$class$max.dist[,1] 
+# 
+# 
+# # calculate the error rate of the model
+# confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+# print(i)
+# print(get.BER(confusion.mat)) 
+# }
+
+
+# perf.splsda <- perf(splsda.res, validation = "Mfold", folds = 5, 
+#                   progressBar = FALSE, auc = TRUE, nrepeat = 10) 
+# 
+#splsda.res$error.rate
+ 
+# 
+# selectVar(splsda.res, comp = 1)$value
+ 
+test.predict <- predict(splsda.res, Xtest, dist = "max.dist")
+# store prediction for the 4th component
+prediction <- test.predict$class$max.dist[,choice.ncomp] 
+# calculate the error rate of the model
+confusion.mat = get.confusion_matrix(truth = Ytest, predicted = prediction)
+get.BER(confusion.mat)
+
+prediction_finale =as.data.frame(cbind(test.predict$predict[,,tune.splsda$choice.ncomp$ncomp],prediction,test$plus2buts,test)) %>%
+  mutate(uniquegoal=as.character(`test$plus2buts`)) 
+
+```
+
+
+
 #Random forest
 ```{r}
 library(randomForest)
