@@ -14,14 +14,6 @@ output: html_document
 
 ```
 
-#Définition de proxy si besoin
-```{r}
-Sys.setenv(http_proxy="zscaler-paris.pj.fr:80")
-Sys.setenv(https_proxy="zscaler-paris.pj.fr:80") 
-
-Sys.setenv(http_proxy="")
-Sys.setenv(https_proxy="") 
-```
 
 
 
